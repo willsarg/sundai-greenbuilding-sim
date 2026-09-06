@@ -1,0 +1,60 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Green Building sim (POC)</title>
+<style>
+  body { font: 16px system-ui; background: #111; color: #eee; margin: 0; display: grid; grid-template-columns: 22rem 1fr; height: 100vh; }
+  aside { padding: 1.5rem; border-right: 1px solid #333; }
+  main { display: grid; place-items: center; }
+  h1 { font-size: 2rem; margin: 0 0 1rem; }
+  code { display: block; background: #222; padding: .5rem; margin: .25rem 0 .75rem; word-break: break-all; font-size: .8rem; }
+  #status { color: #9a9; }
+  canvas { image-rendering: pixelated; border: 4px solid #333; }
+</style>
+<aside>
+  <h1 id="name"></h1>
+  <p id="status">connecting…</p>
+  <button id="toggle">hide connection info</button>
+  <div id="conn">
+    <p>Send URL</p><code id="send"></code>
+    <p>curl (JSON, 17 rows × 9 × [r,g,b])</p><code id="curl"></code>
+    <p>Python</p><code id="py"></code>
+  </div>
+</aside>
+<main><canvas id="c" width="9" height="17"></canvas></main>
+<script>
+  const ROWS = 17, COLS = 9;
+  const name = location.pathname.slice(1);
+  document.getElementById("name").textContent = name;
+  const sendUrl = `${location.origin}/api/i/${name}/frame`;
+  send.textContent = sendUrl;
+  curl.textContent = `curl -X POST ${sendUrl} -H 'Content-Type: application/json' -d @frame.json`;
+  py.textContent = `from gbsim import WebDisplay\nd = WebDisplay("${name}", "${location.origin}/api")\nf = d.makeframe(); f[0][0] = Color(255,0,0); d.send(f)`;
+  toggle.onclick = () => { const h = conn.style.display === "none"; conn.style.display = h ? "" : "none"; toggle.textContent = h ? "hide connection info" : "show connection info"; };
+
+  // Canvas is 9x17 device pixels, scaled up with CSS; each window = 1 px.
+  const c = document.getElementById("c"), ctx = c.getContext("2d");
+  const fit = () => { const s = Math.floor(Math.min(innerHeight * 0.9 / ROWS, (innerWidth - 22 * 16) * 0.9 / COLS)); c.style.width = COLS * s + "px"; c.style.height = ROWS * s + "px"; };
+  addEventListener("resize", fit); fit();
+  const img = ctx.createImageData(COLS, ROWS);
+
+  // Ring buffer of 3 frames; paint on rAF; drop to newest if behind (latest-wins).
+  const ring = [];
+  function paint() {
+    if (ring.length) {
+      const f = ring.shift();
+      for (let i = 0, j = 0; i < ROWS * COLS; i++) { img.data[j++] = f[i*3]; img.data[j++] = f[i*3+1]; img.data[j++] = f[i*3+2]; img.data[j++] = 255; }
+      ctx.putImageData(img, 0, 0);
+    }
+    requestAnimationFrame(paint);
+  }
+  requestAnimationFrame(paint);
+
+  function connect() {
+    const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/i/${name}/view`);
+    ws.binaryType = "arraybuffer";
+    ws.onopen = () => document.getElementById("status").textContent = "live";
+    ws.onmessage = (e) => { ring.push(new Uint8Array(e.data)); if (ring.length > 3) ring.splice(0, ring.length - 1); };
+    ws.onclose = () => { document.getElementById("status").textContent = "reconnecting…"; setTimeout(connect, 1000); };
+  }
+  connect();
+</script>

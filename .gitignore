@@ -13,3 +13,4 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
+poc/node_modules/

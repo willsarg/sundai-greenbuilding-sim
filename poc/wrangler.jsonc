@@ -1,0 +1,11 @@
+{
+  "name": "gbsim-poc",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./public", "binding": "ASSETS", "html_handling": "none" },
+  "vars": { "EVENT_PASSWORD": "sundai140_E14" },
+  "durable_objects": {
+    "bindings": [{ "name": "INSTANCE", "class_name": "Instance" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Instance"] }]
+}

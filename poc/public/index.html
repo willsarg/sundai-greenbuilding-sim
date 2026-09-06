@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Green Building sim (POC)</title>
+<style>
+  body { font: 16px system-ui; background: #111; color: #eee; max-width: 32rem; margin: 4rem auto; }
+  input, button { font: inherit; padding: .5rem; }
+  section { margin-bottom: 2rem; }
+</style>
+<h1>Green Building sim <small>(POC)</small></h1>
+<section>
+  <h2>Create an instance</h2>
+  <input id="pw" type="password" placeholder="event password">
+  <button id="create">Create</button>
+  <p id="out"></p>
+</section>
+<section>
+  <h2>Watch an instance</h2>
+  <input id="name" placeholder="curious-cat">
+  <button id="watch">Watch</button>
+</section>
+<script>
+  create.onclick = async () => {
+    const r = await fetch("/api/instances", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw.value }) });
+    if (!r.ok) { out.textContent = "wrong password"; return; }
+    const j = await r.json();
+    location.href = j.view_url;
+  };
+  watch.onclick = () => { if (name.value) location.href = "/" + name.value.trim(); };
+</script>
