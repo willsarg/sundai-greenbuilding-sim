@@ -1,0 +1,15 @@
+# Design notes, specs, plans, and scratch thinking stay local — never committed.
+docs/superpowers/
+notes/
+*.scratch.md
+
+# Tooling
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.env*
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
