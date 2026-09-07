@@ -236,7 +236,8 @@ function buildScene(ctx, W, H, mode) {
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }
   const windows=tower(building,corners,sideWidth,W,H);
-  return {W,H,mode,background,structure,live,windows,horizon,corners};
+  return {W,H,mode,background,structure,live,windows,horizon,corners,
+    reflection: river ? surface(ctx,W,H) : null};
 }
 
 function lightWindow(ctx, {points,index}, frame) {
@@ -278,17 +279,25 @@ function render(ctx, frame, W, H, mode) {
   for(const window of windows)lightWindow(lctx,window,frame);
   ctx.clearRect(0,0,W,H);ctx.drawImage(background,0,0);ctx.drawImage(live,0,0);
   if(mode==='river') {
-    // Reflect the actual current window colors in broken, widening water bands.
-    ctx.save();
-    const step=Math.max(2,Math.round(H/360));
-    for(let y=horizon+step;y<H;y+=step) {
-      const depth=(y-horizon)/(H-horizon),sy=horizon-(y-horizon)*1.12;
-      if(sy<0)break;
-      const drift=(Math.sin(y*.19)*3+Math.sin(y*.073)*5)*(1+depth*3)*W/1200;
-      ctx.globalAlpha=(1-depth)*.32;
-      ctx.drawImage(live,0,sy,W,step,drift,y,W,step*.68);
-    }
-    ctx.restore();
+    // Mirror one continuous image. Displacing separate scanlines creates a
+    // sawtooth silhouette, especially at the bottom of a tall reflection.
+    const reflection=scene.reflection, rctx=reflection.getContext('2d');
+    rctx.clearRect(0,0,W,H);
+    rctx.save();
+    rctx.beginPath();rctx.rect(0,horizon,W,H-horizon);rctx.clip();
+    rctx.translate(0,horizon*2);rctx.scale(1,-1);
+    rctx.filter=`blur(${Math.max(.8,H/750)}px)`;
+    rctx.drawImage(live,0,0);
+    rctx.restore();
+    // Fade out before the foreground so the reflection never ends abruptly.
+    const fade=rctx.createLinearGradient(0,horizon,0,H);
+    fade.addColorStop(0,'rgba(0,0,0,.30)');
+    fade.addColorStop(.40,'rgba(0,0,0,.13)');
+    fade.addColorStop(.90,'rgba(0,0,0,0)');
+    fade.addColorStop(1,'rgba(0,0,0,0)');
+    rctx.save();rctx.globalCompositeOperation='destination-in';
+    rctx.fillStyle=fade;rctx.fillRect(0,0,W,H);rctx.restore();
+    ctx.drawImage(reflection,0,0);
   }
   // Subtle photographic falloff keeps the eye on the tower.
   const vignette=ctx.createRadialGradient(W*.52,H*.48,H*.18,W*.5,H*.5,Math.max(W,H)*.78);
