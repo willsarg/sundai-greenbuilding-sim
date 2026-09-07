@@ -75,12 +75,19 @@ function sky(ctx, W, H, horizon) {
 
 function campus(ctx, W, H, horizon, river) {
   const buildings = river
-    ? [[-.02,.16,.06],[.13,.14,.05],[.30,.18,.055],[.56,.16,.07],[.70,.10,.14],[.79,.09,.17],[.88,.16,.12]]
+    ? [[-.02,.14,.045],[.11,.10,.038],[.24,.16,.05],[.36,.09,.042],[.55,.12,.06],[.63,.08,.05],
+       [.72,.07,.11],[.775,.06,.135],[.83,.05,.10],[.87,.09,.085],[.94,.10,.07]]
     : [[-.03,.28,.23],[.23,.14,.12],[.74,.30,.18]];
   for (const [x,w,h] of buildings) {
     const bx=x*W, by=horizon-h*H, bw=w*W, bh=h*H;
-    ctx.fillStyle=river?(x>.75?'#3a3231':'#433c38'):'#2a2521'; ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle='#4a413a';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
+    // Farther (shorter) blocks sit lighter in the haze; nearer ones are darker.
+    const haze=river?Math.min(1,h/.14):1;
+    ctx.fillStyle=river?`rgb(${58-haze*18},${52-haze*16},${48-haze*14})`:'#2a2521';
+    ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=river?'rgba(120,108,92,.35)':'#4a413a';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
+    if(river&&h>.09) { // rooftop mechanical penthouse on the tall Kendall blocks
+      ctx.fillStyle='#2e2a27';ctx.fillRect(bx+bw*.3,by-H*.012,bw*.4,H*.012);
+    }
     const spacing=Math.max(5, H*(river?.009:.016));
     for(let yy=by+spacing; yy<horizon-spacing; yy+=spacing*1.65) {
       line(ctx,[[bx,yy+spacing],[bx+bw,yy+spacing]],'#1a1613',Math.max(1,spacing*.22));
@@ -94,12 +101,12 @@ function campus(ctx, W, H, horizon, river) {
   if(river) {
     // Great Dome: shallow limestone cap, curved masonry courses, a recessed
     // drum, and the columned facade below. An illustration at skyline scale.
-    const x=W*.10,y=horizon-H*.075,r=Math.min(H*.032,W*.04);
+    const x=W*.10,y=horizon-H*.052,r=Math.min(H*.026,W*.033);
     const hair=Math.max(.45,H/1500), rx=r*1.40, ry=r*.80;
     const stone=ctx.createLinearGradient(x-r*1.8,0,x+r*1.8,0);
     stone.addColorStop(0,'#555f61');stone.addColorStop(.32,'#8c8d7e');
     stone.addColorStop(.68,'#72796f');stone.addColorStop(1,'#414f55');
-    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.075);
+    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.052);
 
     // Shadowed bays behind the pale columns, with warm recessed windows.
     ctx.fillStyle='#273840';ctx.fillRect(x-r*1.48,y+r*.43,r*2.96,r*.91);
@@ -160,8 +167,6 @@ function campus(ctx, W, H, horizon, river) {
     // Low crown/oculus rather than a pointed or lantern-shaped roof.
     ctx.fillStyle='#a8aea0';ctx.beginPath();ctx.ellipse(x,y-ry+r*.019,r*.16,r*.035,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#607577';ctx.beginPath();ctx.ellipse(x,y-ry+r*.012,r*.10,r*.015,0,0,Math.PI*2);ctx.fill();
-    // A single narrow chimney breaks up the roofline beside the dome.
-    ctx.fillStyle='#4a453e';ctx.fillRect(W*.22,horizon-H*.10,W*.007,H*.04);
   }
 }
 
