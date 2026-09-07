@@ -48,8 +48,10 @@ const AtmosphereShader = {
       vec2 d = (uv - 0.5); float r2 = dot(d, d);
       vec2 ca = d * r2 * 0.012;
       vec3 col = vec3(texture2D(tDiffuse, uv + ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - ca).b);
-      // Haze: thickest in a band just above the horizon, thinner high in the sky.
-      float h = exp(-abs(uv.y - horizon) * 9.0) * 0.16 + max(0.0, uv.y - horizon) * 0.05;
+      // Haze: only above the waterline, thickest just over the far bank and
+      // thinning with height. The water itself stays clear.
+      float above = max(0.0, uv.y - horizon);
+      float h = (uv.y > horizon ? exp(-above * 14.0) * 0.10 + above * 0.03 : 0.0);
       col = mix(col, vec3(0.42, 0.33, 0.27), h);
       // Water reflections are a touch darker and cooler than what they mirror.
       if (water > 0.5 && depth > 0.0) col *= vec3(0.86, 0.88, 0.92);
