@@ -35,13 +35,16 @@ artistic. Camera assumed on the Esplanade due south of the tower at
 | Media Lab (E14) | 42.36043, -71.08730 | +15.6 | .81 |
 | Sailing Pavilion | 42.35851, -71.08779 | +18.1 | .86 |
 
-Heights (OSM `height` tags, 2026-09-07) and apparent size relative to the tower
+Heights (OSM `height` tags, 2026-09-07; the MIT buildings carry
+`source=Massachusetts Institute of Technology - Facility Information Systems`,
+verified for Building 10 and Stata; the Green Building's 90 m also matches
+Wikipedia's 295 ft) and apparent size relative to the tower
 (height/distance, tower = 1.00) from the same camera:
 
 | Landmark | height m | apparent |
 | --- | --- | --- |
 | Green Building | 90 | 1.00 |
-| Great Dome (Building 10, top of dome) | 58 | 0.67 |
+| Great Dome (Building 10, top of dome) | 58.03 | 0.67 |
 | Stata Center | 43.1 | 0.38 |
 | Hayden Library | ~20 (no OSM tag; estimate) | ~0.29 |
 | Walker Memorial | 26.3 | 0.35 |
