@@ -110,6 +110,26 @@ function campus(ctx, W, H, horizon, river) {
     const stone=ctx.createLinearGradient(x-bw/2,0,x+bw/2,0);
     stone.addColorStop(0,'#5b5d58');stone.addColorStop(.35,'#8b8778');
     stone.addColorStop(.7,'#767467');stone.addColorStop(1,'#4b4f50');
+    // Maclaurin wings (Buildings 3 and 4, 27 m): long limestone ranges either
+    // side of Building 10, with a pilaster rhythm and the carved frieze of
+    // scientists' names along the top. Apparent height ~.11H.
+    const wingH=H*.11, wy=base-wingH, wingW=bw*1.35;
+    for(const dir of [-1,1]) {
+      const wx=dir<0 ? x-bw/2-wingW : x+bw/2;
+      const wg=ctx.createLinearGradient(0,wy,0,base);
+      wg.addColorStop(0,'#7f7a6b');wg.addColorStop(1,'#4f4b43');
+      ctx.fillStyle=wg;ctx.fillRect(wx,wy,wingW,wingH);
+      ctx.fillStyle='#a49f8b';ctx.fillRect(wx,wy,wingW,wingH*.05);                 // cornice
+      ctx.fillStyle='#8e897a';ctx.fillRect(wx,wy+wingH*.05,wingW,wingH*.10);       // frieze band
+      for(let i=0;i<22;i++){const fx=wx+wingW*(.02+i*.045);                         // carved names
+        ctx.fillStyle='rgba(40,36,30,.45)';ctx.fillRect(fx,wy+wingH*.085,wingW*.03,wingH*.035);}
+      const nP=9, pp=wingW/nP;
+      for(let i=0;i<nP;i++){const px=wx+i*pp;
+        ctx.fillStyle='#9c9581';ctx.fillRect(px+pp*.08,wy+wingH*.18,pp*.10,wingH*.70);   // pilaster
+        ctx.fillStyle='#2b2f31';ctx.fillRect(px+pp*.32,wy+wingH*.25,pp*.36,wingH*.28);   // upper window
+        ctx.fillStyle=noise(i*13+dir)>.45?'rgba(255,215,160,.32)':'#23282b';
+        ctx.fillRect(px+pp*.32,wy+wingH*.60,pp*.36,wingH*.26);}                          // lower window
+    }
     // Portico: shadowed wall behind a row of ten tall columns with bases and capitals.
     const py=base-portH;
     ctx.fillStyle='#2a3238';ctx.fillRect(x-bw/2,py,bw,portH);
