@@ -2,6 +2,18 @@
   "name": "gbsim-poc",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "wrangler dev --port 8787" },
-  "devDependencies": { "wrangler": "^4" }
+  "scripts": {
+    "dev": "vite --port 8787",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.5",
+    "vite": "^8.2.2",
+    "wrangler": "^4"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
+  }
 }
