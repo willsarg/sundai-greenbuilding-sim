@@ -100,74 +100,59 @@ function campus(ctx, W, H, horizon, river) {
   }
   if(river) { hayden(ctx,W,H,horizon); stata(ctx,W,H,horizon); mediaLab(ctx,W,H,horizon); walker(ctx,W,H,horizon); }
   if(river) {
-    // Great Dome: shallow limestone cap, curved masonry courses, a recessed
-    // drum, and the columned facade below. An illustration at skyline scale.
-    const x=W*.07,y=horizon-H*.185,r=Math.min(H*.054,W*.07);
-    const hair=Math.max(.45,H/1500), rx=r*1.40, ry=r*.80;
-    const stone=ctx.createLinearGradient(x-r*1.8,0,x+r*1.8,0);
-    stone.addColorStop(0,'#555f61');stone.addColorStop(.32,'#8c8d7e');
-    stone.addColorStop(.68,'#72796f');stone.addColorStop(1,'#414f55');
-    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.185);
-
-    // Shadowed bays behind the pale columns, with warm recessed windows.
-    ctx.fillStyle='#273840';ctx.fillRect(x-r*1.48,y+r*.43,r*2.96,r*.91);
-    for(let i=0;i<10;i++) {
-      const bx=x-r*1.40+i*r*.295;
-      ctx.fillStyle=i%3===0?'#968c70':'#45534f';
-      ctx.fillRect(bx+r*.10,y+r*.69,r*.10,r*.40);
-      line(ctx,[[bx+r*.15,y+r*.69],[bx+r*.15,y+r*1.09]],'#24383f',hair);
-      const column=ctx.createLinearGradient(bx,0,bx+r*.12,0);
-      column.addColorStop(0,'#505f60');column.addColorStop(.35,'#b0aa91');
-      column.addColorStop(1,'#738077');
-      ctx.fillStyle=column;ctx.fillRect(bx,y+r*.50,r*.12,r*.75);
-      ctx.fillStyle='#a19f89';ctx.fillRect(bx-r*.025,y+r*.46,r*.17,r*.065);
-      ctx.fillStyle='#8b917f';ctx.fillRect(bx-r*.025,y+r*1.24,r*.17,r*.055);
+    // Great Dome (Building 10): a tall Ionic portico fills the facade, an
+    // entablature and low windowed drum sit above it, and a rounded
+    // Pantheon-style dome with an oculus cap crowns it. Sized from OSM height.
+    const x=W*.07, total=H*.185, base=horizon, r=Math.min(H*.054,W*.07);
+    const hair=Math.max(.45,H/1500);
+    const portH=total*.50, entH=total*.07, drumH=total*.10, domeH=total*.33;
+    const bw=r*3.4;
+    const stone=ctx.createLinearGradient(x-bw/2,0,x+bw/2,0);
+    stone.addColorStop(0,'#5b5d58');stone.addColorStop(.35,'#8b8778');
+    stone.addColorStop(.7,'#767467');stone.addColorStop(1,'#4b4f50');
+    // Portico: shadowed wall behind a row of ten tall columns with bases and capitals.
+    const py=base-portH;
+    ctx.fillStyle='#2a3238';ctx.fillRect(x-bw/2,py,bw,portH);
+    const nCol=10, pitch=bw*.86/(nCol-1), cw=r*.13;
+    for(let i=0;i<nCol;i++) {
+      const cx=x-bw*.43+i*pitch;
+      const col=ctx.createLinearGradient(cx-cw/2,0,cx+cw/2,0);
+      col.addColorStop(0,'#4f5a5a');col.addColorStop(.4,'#b9b19a');col.addColorStop(1,'#6f776f');
+      ctx.fillStyle=col;ctx.fillRect(cx-cw/2,py+portH*.10,cw,portH*.82);
+      ctx.fillStyle='#b0a88f';ctx.fillRect(cx-cw*.85,py+portH*.08,cw*1.7,portH*.05);   // capital
+      ctx.fillStyle='#8d8873';ctx.fillRect(cx-cw*.8,py+portH*.90,cw*1.6,portH*.04);    // base
+      if(i<nCol-1){ctx.fillStyle='rgba(255,215,160,.28)';ctx.fillRect(cx+pitch*.5-cw*.4,py+portH*.35,cw*.8,portH*.35);}
     }
-    for(let i=0;i<3;i++) {
-      ctx.fillStyle=i===1?'#9a9a85':'#626f69';
-      ctx.fillRect(x-r*(1.75+i*.045),y+r*(1.32+i*.055),r*(3.50+i*.09),r*.055);
+    // Entablature and pediment line.
+    ctx.fillStyle=stone;ctx.fillRect(x-bw*.52,py-entH,bw*1.04,entH);
+    ctx.fillStyle='#a9a48f';ctx.fillRect(x-bw*.53,py-entH,bw*1.06,entH*.22);
+    ctx.fillStyle='#3f4645';ctx.fillRect(x-bw*.52,py-entH*.45,bw*1.04,hair*1.5);
+    // Drum: ring of small windows under the dome.
+    const dy=py-entH-drumH, drumW=r*2.6;
+    ctx.fillStyle=stone;ctx.fillRect(x-drumW/2,dy,drumW,drumH);
+    for(let i=-5;i<=5;i++) {
+      const a=i/6*Math.PI/2, wx=x+Math.sin(a)*drumW*.46, ww=Math.max(hair,Math.cos(a)*r*.09);
+      ctx.fillStyle='#2b3a40';ctx.fillRect(wx-ww/2,dy+drumH*.30,ww,drumH*.42);
     }
-
-    // Cylindrical drum: a curved upper rim and narrow inset panels.
-    ctx.fillStyle=stone;ctx.fillRect(x-r*1.39,y-r*.025,r*2.78,r*.38);
-    ctx.beginPath();ctx.ellipse(x,y+r*.34,r*1.39,r*.09,0,0,Math.PI);
-    ctx.fillStyle='#4d5d5f';ctx.fill();
-    for(let i=-7;i<=7;i++) {
-      const angle=i/8*Math.PI/2, bx=x+Math.sin(angle)*r*1.33;
-      const width=Math.max(hair,Math.cos(angle)*r*.063);
-      ctx.fillStyle='#3d5056';ctx.fillRect(bx-width/2,y+r*.07,width,r*.14);
-      line(ctx,[[bx+width,y+r*.045],[bx+width,y+r*.265]],'rgba(193,188,160,.30)',hair);
-    }
-    // Deep cornice bands separate the cap, drum, and colonnade.
-    for(const [yy,ww,hh,color] of [[-.025,1.47,.07,'#aaa793'],[.31,1.48,.045,'#a19f8b'],
-      [.36,1.62,.065,'#4a5a5d'],[.425,1.68,.055,'#a3a18b']]) {
-      ctx.fillStyle=color;ctx.fillRect(x-r*ww,y+r*yy,r*ww*2,r*hh);
-    }
-
-    const dome=ctx.createRadialGradient(x-r*.44,y-r*.71,r*.04,x+r*.25,y+r*.1,r*1.70);
-    dome.addColorStop(0,'#b2b2a0');dome.addColorStop(.40,'#969e93');
-    dome.addColorStop(.76,'#707e7c');dome.addColorStop(1,'#455b66');
+    ctx.fillStyle='#a5a08b';ctx.fillRect(x-drumW*.53,dy-hair*2,drumW*1.06,hair*3);
+    // Dome: rounded cap, lit from the upper left, with curved masonry courses.
+    const rx=drumW*.5, ry=domeH, cy=dy;
+    const dome=ctx.createRadialGradient(x-rx*.35,cy-ry*.75,rx*.05,x+rx*.15,cy-ry*.2,rx*1.5);
+    dome.addColorStop(0,'#b9b8a6');dome.addColorStop(.45,'#8f978f');dome.addColorStop(.8,'#5f6d6f');dome.addColorStop(1,'#3d4c54');
     ctx.save();
-    ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,Math.PI,0);ctx.closePath();
+    ctx.beginPath();ctx.ellipse(x,cy,rx,ry,0,Math.PI,0);ctx.closePath();
     ctx.fillStyle=dome;ctx.fill();ctx.clip();
-    // Stone courses follow the curvature instead of cutting straight stripes.
-    for(let i=1;i<=7;i++) {
-      const t=i/8, yy=y-ry*(1-t), half=rx*Math.sqrt(1-(1-t)**2);
-      ctx.beginPath();ctx.ellipse(x,yy,half,r*.065*t,0,0,Math.PI);
-      ctx.strokeStyle='rgba(41,60,66,.29)';ctx.lineWidth=hair;ctx.stroke();
-      // Staggered masonry joints, small enough to remain texture at a distance.
-      for(let j=-5;j<=5;j++) {
-        const xx=x+(j+(i%2)*.5)*r*.22;
-        if(Math.abs(xx-x)<half-r*.08)
-          line(ctx,[[xx,yy-r*.06],[xx+r*.016,yy+r*.005]],'rgba(55,72,75,.19)',hair*.75);
-      }
+    for(let i=1;i<=6;i++) {
+      const t=i/7, yy=cy-ry*(1-t), half=rx*Math.sqrt(1-(1-t)**2);
+      ctx.beginPath();ctx.ellipse(x,yy,half,ry*.08*t,0,0,Math.PI);
+      ctx.strokeStyle='rgba(35,50,56,.28)';ctx.lineWidth=hair;ctx.stroke();
     }
     ctx.restore();
-    ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,Math.PI,0);
-    ctx.strokeStyle='rgba(210,210,185,.35)';ctx.lineWidth=hair;ctx.stroke();
-    // Low crown/oculus rather than a pointed or lantern-shaped roof.
-    ctx.fillStyle='#a8aea0';ctx.beginPath();ctx.ellipse(x,y-ry+r*.019,r*.16,r*.035,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#607577';ctx.beginPath();ctx.ellipse(x,y-ry+r*.012,r*.10,r*.015,0,0,Math.PI*2);ctx.fill();
+    ctx.beginPath();ctx.ellipse(x,cy,rx,ry,0,Math.PI,0);
+    ctx.strokeStyle='rgba(215,215,190,.35)';ctx.lineWidth=hair;ctx.stroke();
+    // Oculus cap.
+    ctx.fillStyle='#b4b7a8';ctx.beginPath();ctx.ellipse(x,cy-ry+r*.02,r*.22,r*.05,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#65787a';ctx.beginPath();ctx.ellipse(x,cy-ry+r*.012,r*.14,r*.025,0,0,Math.PI*2);ctx.fill();
   }
 }
 
