@@ -53,8 +53,12 @@ const AtmosphereShader = {
       vec3 col = vec3(texture2D(tDiffuse, uv + ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - ca).b);
       // Haze: only above the waterline, thickest just over the far bank and
       // thinning with height. The water itself stays clear.
+      // It ramps in from zero so nothing standing on the horizon line gets a
+      // seam, and it is much weaker in the street views where the horizon is
+      // the plaza a few metres away rather than the far bank.
       float above = max(0.0, uv.y - horizon);
-      float h = (uv.y > horizon ? exp(-above * 14.0) * 0.10 + above * 0.03 : 0.0);
+      float ramp = smoothstep(0.0, 0.05, above);
+      float h = ramp * (exp(-above * 10.0) * 0.10 + above * 0.03) * (water > 0.5 ? 1.0 : 0.35);
       col = mix(col, vec3(0.42, 0.33, 0.27), h);
       // Water reflections are a touch darker and cooler than what they mirror.
       if (water > 0.5 && depth > 0.0) col *= vec3(0.86, 0.88, 0.92);
