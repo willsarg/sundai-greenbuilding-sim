@@ -160,12 +160,8 @@ function campus(ctx, W, H, horizon, river) {
     // Low crown/oculus rather than a pointed or lantern-shaped roof.
     ctx.fillStyle='#a8aea0';ctx.beginPath();ctx.ellipse(x,y-ry+r*.019,r*.16,r*.035,0,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#607577';ctx.beginPath();ctx.ellipse(x,y-ry+r*.012,r*.10,r*.015,0,0,Math.PI*2);ctx.fill();
-    // Rooftop utility blocks and the narrow chimney break up the roofline.
-    ctx.fillStyle='#62625a';ctx.fillRect(W*.33,horizon-H*.14,W*.009,H*.05);
-    for(let i=0;i<13;i++) {
-      const x=W*(.36+i*.027),y=horizon-H*(.112+noise(i+15)*.013);
-      ctx.fillStyle='#4c5559';ctx.fillRect(x,y,W*.009,H*.018);
-    }
+    // A single narrow chimney breaks up the roofline beside the dome.
+    ctx.fillStyle='#4a453e';ctx.fillRect(W*.33,horizon-H*.14,W*.009,H*.05);
   }
 }
 

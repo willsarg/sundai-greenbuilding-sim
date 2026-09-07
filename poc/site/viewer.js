@@ -25,10 +25,12 @@ addEventListener("resize", fit); fit();
 // Ring buffer of 3 frames; paint on rAF; latest-wins if behind.
 let frame = new Uint8Array(ROWS * COLS * 3);
 const ring = [];
+const debug = (window.__gb = { paints: 0, draws: 0, view, error: null });
 function paint() {
+  debug.paints++; debug.view = view;
   if (ring.length) { frame = ring.shift(); dirty = true; }
   if (dirty) {
-    try { presenter.draw(frame, view); } catch (e) { console.error("draw failed", e); }
+    try { presenter.draw(frame, view); debug.draws++; } catch (e) { debug.error = String(e); console.error("draw failed", e); }
     dirty = false;
   }
   requestAnimationFrame(paint);
