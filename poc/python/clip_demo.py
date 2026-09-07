@@ -6,7 +6,7 @@ from gbsim import WebDisplay, Color
 
 name = sys.argv[1]
 d = WebDisplay(name, *sys.argv[2:3])
-FPS, SECS = 15, 6
+FPS, SECS = 30, 6
 frames = []
 for t in range(FPS * SECS):
     f = d.makeframe()

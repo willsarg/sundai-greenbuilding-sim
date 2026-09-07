@@ -40,7 +40,7 @@ Best for pre-rendered animations. Upload, close your laptop, the building keeps 
 ```python
 frames = [d.makeframe() for _ in range(90)]  # 1..900 frames
 # ...draw into each frame...
-d.upload_clip(frames, fps=15)                # fps 1..30
+d.upload_clip(frames, fps=30)                # fps 1..30
 d.clear_clip()                               # remove it
 ```
 
@@ -48,7 +48,7 @@ Live frames always take over while they arrive. Two seconds after the last live 
 resumes where it paused. The status line under the instance name tells you which mode you are
 seeing.
 
-Raw HTTP: `POST /api/i/<name>/clip` with JSON `{"fps": 15, "frames": [<17×9×[r,g,b]>, ...]}`,
+Raw HTTP: `POST /api/i/<name>/clip` with JSON `{"fps": 30, "frames": [<17×9×[r,g,b]>, ...]}`,
 `DELETE` the same URL to clear.
 
 ## Demos
