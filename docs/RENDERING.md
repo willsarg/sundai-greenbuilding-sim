@@ -16,6 +16,13 @@ Decided by Will, 2026-09-07.
 
 References used for any of this are listed in `IMAGE_SOURCES.md`.
 
+## Placement is locked (Will, 2026-09-07)
+
+The position, size, and framing of every element in every view (close, street,
+river, and the river toggles) is **final**. Do not move, resize, or reframe
+anything unless Will specifically asks for that change and confirms it.
+Material, lighting, and detail work inside an element is still fine.
+
 ## River-view geography
 
 Horizontal placement in both river views comes from real coordinates, sizes stay
