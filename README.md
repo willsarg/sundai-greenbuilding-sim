@@ -49,7 +49,10 @@ f[0][0] = Color(255, 0, 0)
 d.send(f)                                    # non-blocking; call it up to 30 times a second
 ```
 
-`send()` never blocks your loop. The display shows the newest frame that reached it, so if two
+`send()` never blocks your loop: it hands the frame to a background sender, and if a frame is
+still in flight the newer one replaces it (latest wins). So the instance's `frames` count is
+normally lower than your number of `send()` calls; that is dropped-by-design, not an error.
+The display shows the newest frame that reached it, so if two
 copies of your program run at once the building flickers between them: that is the signal to
 kill one. Each instance accepts at most 40 frames per second in total.
 
