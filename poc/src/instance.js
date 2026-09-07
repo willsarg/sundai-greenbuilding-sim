@@ -54,6 +54,7 @@ export async function parseClip(req) {
     fps = buf[1];
     const n = buf[2] | (buf[3] << 8);
     if (buf.length !== 4 + n * BYTES) throw new Error(`expected ${4 + n * BYTES} bytes for ${n} frames, got ${buf.length}`);
+    if (n < 1) throw new Error("clip must have at least one frame");
     if (n > MAX_CLIP_FRAMES) throw new Error(`max ${MAX_CLIP_FRAMES} frames`);
     if (!(fps >= 1 && fps <= 30)) throw new Error("fps must be 1..30");
     return buf;
@@ -171,6 +172,7 @@ export class Instance extends DurableObject {
       } catch (e) {
         return json({ error: e.message }, 400);
       }
+      this.markUsed();
       this.accept(bytes);
       return new Response(null, { status: 204, headers: CORS });
     }
@@ -213,7 +215,7 @@ export class Instance extends DurableObject {
       this.ctx.acceptWebSocket(pair[1]);   // hibernatable; survives idle
       // Fill the viewer immediately: the clip if there is one, and the last live frame
       // unless a clip exists and the live sender has gone quiet.
-      if (this.clip) pair[1].send(this.clip);
+      pair[1].send(this.clip || EMPTY_CLIP);
       if (!this.clip || (this.lastAt && Date.now() - this.lastAt < LIVE_GRACE_MS)) pair[1].send(this.frame);
       return new Response(null, { status: 101, webSocket: pair[0] });
     }

@@ -1,6 +1,8 @@
 """WebDisplay: a Display that sends frames to a hosted simulator instance."""
+import atexit
 import http.client
 import threading
+import weakref
 from urllib.parse import urlsplit
 from .display import Display, Frame
 
@@ -12,6 +14,9 @@ class WebDisplay(Display):
     (latest wins) and a background thread pushes it over a single keep-alive HTTPS
     connection. A round trip to Cloudflare is ~50 ms on a warm connection, so a
     30 fps game loop stays at 30 fps and the display gets ~20 fps of the latest frames.
+
+    The last frame is flushed automatically at interpreter exit, so one-shot scripts work.
+    Call flush() to wait for the newest frame to land, close() (or use `with`) when done.
     """
 
     def __init__(self, name, base_url="https://sundai.willsarg.com/api", timeout=2.0):
@@ -24,7 +29,10 @@ class WebDisplay(Display):
         self._slot = None
         self._cv = threading.Condition()
         self._fails = 0
-        threading.Thread(target=self._pump, daemon=True).start()
+        self._busy = False          # a frame is in flight
+        self._closed = False
+        self._thread = None         # started on first send(); clip-only clients never need it
+        atexit.register(_flush_at_exit, weakref.ref(self))
 
     def makeframe(self):
         return Frame()
@@ -74,8 +82,34 @@ class WebDisplay(Display):
     def send(self, frame):
         buf = self._pack(frame)
         with self._cv:
+            if self._closed:
+                return
             self._slot = buf
+            if self._thread is None:
+                self._thread = threading.Thread(target=self._pump, daemon=True)
+                self._thread.start()
             self._cv.notify()
+
+    def flush(self, timeout=5.0):
+        """Block until the newest frame has been sent (or timeout seconds pass)."""
+        with self._cv:
+            self._cv.wait_for(lambda: self._slot is None and not self._busy, timeout=timeout)
+
+    def close(self):
+        """Flush, stop the sender thread and drop the connection. The display is unusable after."""
+        self.flush()
+        with self._cv:
+            self._closed = True
+            self._cv.notify_all()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+        self._thread = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
 
     # -- background sender ---------------------------------------------------
     def _connect(self):
@@ -93,9 +127,12 @@ class WebDisplay(Display):
     def _pump(self):
         while True:
             with self._cv:
-                while self._slot is None:
+                while self._slot is None and not self._closed:
                     self._cv.wait()
+                if self._closed:
+                    break
                 buf, self._slot = self._slot, None
+                self._busy = True
             try:
                 if self._conn is None:
                     self._conn = self._connect()
@@ -114,3 +151,19 @@ class WebDisplay(Display):
                 except Exception:
                     pass
                 self._conn = None
+            finally:
+                with self._cv:
+                    self._busy = False
+                    self._cv.notify_all()
+        try:
+            if self._conn is not None:
+                self._conn.close()
+        except Exception:
+            pass
+        self._conn = None
+
+
+def _flush_at_exit(ref):
+    d = ref()
+    if d is not None:
+        d.flush(timeout=2.0)

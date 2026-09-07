@@ -26,7 +26,8 @@ export default {
     if (url.pathname === "/api/instances" && req.method === "POST") {
       let body = {};
       try { body = await req.json(); } catch {}
-      if (body.password !== env.EVENT_PASSWORD) return json({ error: "unauthorized" }, 401);
+      if (!env.EVENT_PASSWORD) return json({ error: "server has no EVENT_PASSWORD configured" }, 503);
+      if (typeof body.password !== "string" || body.password !== env.EVENT_PASSWORD) return json({ error: "unauthorized" }, 401);
       // Claim an unused name (36x36 pool). The DO makes the claim atomic; retry on collision.
       let name = null;
       for (let i = 0; i < 8 && !name; i++) {
@@ -50,6 +51,7 @@ export default {
     if (m) {
       const name = m[1];
       if (!NAME_RE.test(name)) return json({ error: "bad instance name" }, 400);
+      if (m[2] === "/claim") return json({ error: "not found" }, 404);   // internal: only the allocator above may claim
       const stub = env.INSTANCE.get(env.INSTANCE.idFromName(name));
       return stub.fetch(req);
     }
