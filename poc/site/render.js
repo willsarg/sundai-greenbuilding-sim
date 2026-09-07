@@ -313,7 +313,7 @@ function tower(ctx, corners, sideWidth, W, H) {
 }
 
 function buildScene(ctx, W, H, mode) {
-  const river=mode==='river', close=mode==='close';
+  const river=mode==='river'||mode==='riverAngle', angled=mode==='riverAngle', close=mode==='close';
   const background=surface(ctx,W,H), structure=surface(ctx,W,H), live=surface(ctx,W,H);
   const bg=background.getContext('2d'), building=structure.getContext('2d');
   // Close view crops the lobby/plaza, preserving the full display and rooftop.
@@ -324,7 +324,7 @@ function buildScene(ctx, W, H, mode) {
   if(river) {
     const bh=Math.min(H*.36,W*.80),bw=bh*.36,x=W*.50-bw/2,y=horizon-bh;
     corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
-    sideWidth=bw*.28;
+    sideWidth=angled?bw*.28:0;
     const water=bg.createLinearGradient(0,horizon,0,H);
     // The Charles at night mirrors the warm haze near the far bank and goes
     // near-black toward the viewer's shore.
@@ -431,7 +431,7 @@ function render(ctx, frame, W, H, mode) {
   lctx.clearRect(0,0,W,H);lctx.drawImage(structure,0,0);
   for(const window of windows)lightWindow(lctx,window,frame);
   ctx.clearRect(0,0,W,H);ctx.drawImage(background,0,0);ctx.drawImage(live,0,0);
-  if(mode==='river') {
+  if(scene.reflection) {
     // Mirror one continuous image. Displacing separate scanlines creates a
     // sawtooth silhouette, especially at the bottom of a tall reflection.
     const reflection=scene.reflection, rctx=reflection.getContext('2d');
@@ -460,3 +460,4 @@ function render(ctx, frame, W, H, mode) {
 export function renderClose(ctx,frame,W,H){render(ctx,frame,W,H,'close');}
 export function renderStreet(ctx,frame,W,H){render(ctx,frame,W,H,'street');}
 export function renderRiver(ctx,frame,W,H){render(ctx,frame,W,H,'river');}
+export function renderRiverAngle(ctx,frame,W,H){render(ctx,frame,W,H,'riverAngle');}
