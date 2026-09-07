@@ -10,14 +10,14 @@ $("py").textContent = `from gbsim import WebDisplay, Color\nd = WebDisplay("${na
 $("toggle").onclick = () => { const h = $("conn").style.display === "none"; $("conn").style.display = h ? "" : "none"; $("toggle").textContent = h ? "hide connection info" : "show connection info"; };
 
 // View state lives in the URL so any link reproduces exactly what it shows:
-//   /{name}?view=close|street|river|riverAngle&real=1
-const VIEWS = ["close", "street", "river", "riverAngle"];
+//   /{name}?view=close|street|river&real=1&fit=1
+const VIEWS = ["close", "street", "river"];
 const params = new URLSearchParams(location.search);
 let view = VIEWS.includes(params.get("view")) ? params.get("view") : "close";
 $("view").value = view;
 $("real").checked = params.get("real") === "1";
 $("fit").checked = params.get("fit") === "1";
-const isRiver = () => view.startsWith("river");
+const isRiver = () => view === "river";
 $("realRow").hidden = !isRiver(); $("fitRow").hidden = !isRiver();
 function syncUrl() {
   const u = new URL(location);

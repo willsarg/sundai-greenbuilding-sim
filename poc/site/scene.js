@@ -7,9 +7,9 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { renderClose, renderStreet, renderRiver, renderRiverAngle } from "/render.js";
+import { renderClose, renderStreet, renderRiver } from "/render.js";
 
-const painters = { close: renderClose, street: renderStreet, river: renderRiver, riverAngle: renderRiverAngle };
+const painters = { close: renderClose, street: renderStreet, river: renderRiver };
 
 export function webglAvailable() {
   try {

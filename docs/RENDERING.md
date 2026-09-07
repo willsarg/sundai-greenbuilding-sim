@@ -10,8 +10,8 @@ Decided by Will, 2026-09-07.
    trees, water, sky, and lighting may be more handsome than true if that makes
    a better picture. Reference photos inform them; they do not bind them.
 3. **Every view must be a distinct camera.** A view that only adds a wedge to
-   an elevation is not a view. Angled views foreshorten the faces and converge
-   the edges like a real two-point perspective.
+   an elevation is not a view. (The angled river view was removed 2026-09-07:
+   at 590 m the true perspective is nearly orthographic, so it added nothing.)
 4. **State lives in the URL.** `?view=...&real=1` reproduces what a link shows.
 
 References used for any of this are listed in `IMAGE_SOURCES.md`.
