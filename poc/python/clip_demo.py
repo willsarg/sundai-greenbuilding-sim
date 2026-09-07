@@ -5,7 +5,7 @@ import sys, colorsys
 from gbsim import Frame, Color, upload_clip
 
 name = sys.argv[1]
-base = sys.argv[2:3]
+base_url = sys.argv[2] if len(sys.argv) > 2 else None
 FPS, PERIOD, BOUNCES = 30, 32, 6                  # 32-frame bounce; clip = whole bounces so the loop is seamless
 N = PERIOD * BOUNCES
 frames = []
@@ -18,5 +18,5 @@ for t in range(N):
         r, g, b = colorsys.hsv_to_rgb(h, 1, 1)
         f[row][c] = Color(r * 255, g * 255, b * 255)
     frames.append(f)
-ok = upload_clip(name, frames, fps=FPS, *base)
+ok = upload_clip(name, frames, fps=FPS, **({"base_url": base_url} if base_url else {}))
 print("uploaded" if ok else "failed", f"{len(frames)} frames @ {FPS} fps to", name)
