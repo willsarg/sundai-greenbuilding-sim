@@ -67,13 +67,40 @@ function sky(ctx, W, H, horizon) {
     glow(ctx, 0, 0, W*(.05+noise(i+4)*.09), lit>.6?'150,118,96':'96,92,98', .05+lit*.05);
     ctx.restore();
   }
-  // A sparse, dim star field survives only high in the sky.
+  // A sparse, dim background field survives only high in the sky.
   const starScale = Math.max(.8, Math.min(W, H) / 750);
-  for (let i=0; i<70; i++) {
+  for (let i=0; i<50; i++) {
     const x=noise(i+70)*W, y=noise(i+140)*horizon*.55;
-    const bright=noise(i+44), fade=(1-(y/(horizon*.55))**1.5)*.55;
-    ctx.fillStyle=`rgba(225,228,238,${(.15+bright*.45)*fade})`;
-    ctx.beginPath();ctx.arc(x,y,(bright>.9?1.1:.6)*starScale,0,Math.PI*2);ctx.fill();
+    const bright=noise(i+44), fade=(1-(y/(horizon*.55))**1.5)*.40;
+    ctx.fillStyle=`rgba(225,228,238,${(.12+bright*.35)*fade})`;
+    ctx.beginPath();ctx.arc(x,y,(bright>.9?1.0:.55)*starScale,0,Math.PI*2);ctx.fill();
+  }
+  // The real northern sky over MIT on hack night, 2026-09-13 ~21:00 EDT
+  // (computed from RA/Dec for 42.36N 71.09W): only stars bright enough to
+  // beat the city glow. Azimuth is relative to north (east positive), mapped
+  // across a wide 120-degree field; altitude 0-55 degrees fills the sky band.
+  const STARS=[ // name, az, alt, magnitude
+    ['Alkaid',-49.3,30.7,1.9],['Mizar',-41.5,30.5,2.2],['Alioth',-37.9,27.5,1.8],['Megrez',-33.2,24.1,3.3],
+    ['Phecda',-33.5,19.5,2.4],['Merak',-25.7,16.9,2.4],['Dubhe',-22.5,21.3,1.8],
+    ['Kochab',-21.7,44.7,2.1],['Polaris',1.0,42.2,2.0],
+    ['Capella',25.3,4.5,0.1],['Mirfak',38.4,18.7,1.8],['Algol',47.1,14.5,2.1],
+    ['Segin',33.5,36.5,3.4],['Ruchbah',39.0,38.3,2.7],['Gamma Cas',39.8,41.9,2.5],['Caph',43.5,47.4,2.3],['Schedar',46.0,42.8,2.2],
+  ];
+  const LINES=[['Alkaid','Mizar'],['Mizar','Alioth'],['Alioth','Megrez'],['Megrez','Phecda'],['Phecda','Merak'],['Merak','Dubhe'],['Dubhe','Megrez'],
+    ['Segin','Ruchbah'],['Ruchbah','Gamma Cas'],['Gamma Cas','Schedar'],['Schedar','Caph']];
+  const sky=(az,alt)=>[W*(.5+az/120), horizon-(alt/55)*horizon*.96];
+  const at={}; for(const [n,az,alt] of STARS) at[n]=sky(az,alt);
+  // Faint asterism lines: an artistic nudge so the Dipper and the W read.
+  for(const [a,b] of LINES) line(ctx,[at[a],at[b]],'rgba(200,210,235,.10)',Math.max(.5,starScale*.6));
+  for(const [n,az,alt,mag] of STARS) {
+    const [x,y]=at[n];
+    const lum=Math.max(.15,1-(mag+1.5)/5.5);           // 0.1 mag -> ~.7, 3.4 -> ~.15
+    const extinction=1-.55*Math.exp(-alt/8);           // dim near the horizon
+    const a=lum*extinction, rad=(0.7+lum*1.6)*starScale;
+    const tint=n==='Capella'?'255,240,205':n==='Polaris'?'235,240,255':n==='Algol'?'220,230,255':'230,232,240';
+    if(lum>.40)glow(ctx,x,y,rad*5,tint,.22*a);
+    ctx.fillStyle=`rgba(${tint},${Math.min(1,.45+a)})`;
+    ctx.beginPath();ctx.arc(x,y,rad,0,Math.PI*2);ctx.fill();
   }
 }
 

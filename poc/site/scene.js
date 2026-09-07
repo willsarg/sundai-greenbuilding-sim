@@ -55,6 +55,19 @@ const AtmosphereShader = {
       col = mix(col, vec3(0.42, 0.33, 0.27), h);
       // Water reflections are a touch darker and cooler than what they mirror.
       if (water > 0.5 && depth > 0.0) col *= vec3(0.86, 0.88, 0.92);
+      // A plane on the Logan approach crawls across above the skyline: white
+      // nav light plus a red beacon blinking once a second. One every ~90 s.
+      {
+        float period = 90.0, t = mod(time, period), tt = t / 22.0;   // 22 s crossing
+        if (tt < 1.0) {
+          vec2 p = vec2(mix(-0.05, 1.05, tt), horizon + 0.10 + tt * 0.06);
+          vec2 dp = (vUv - p) * vec2(resolution.x / resolution.y, 1.0);
+          float d = length(dp) * resolution.y;
+          float white = exp(-d * d / 2.0) * 0.8;
+          float red = exp(-d * d / 6.0) * step(0.82, fract(time)) * 0.9;
+          col += vec3(white) + vec3(red, red * 0.15, red * 0.1);
+        }
+      }
       // Film grain, animated, kept light and weighted toward the midtones so
       // shadows and the water stay clean.
       float g = hash(gl_FragCoord.xy + fract(time) * 100.0) - 0.5;
