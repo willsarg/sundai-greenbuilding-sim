@@ -44,6 +44,9 @@ d.upload_clip(frames, fps=30)                # fps 1..30
 d.clear_clip()                               # remove it
 ```
 
+The clip wraps straight from the last frame to the first, so make its length a whole number
+of your animation's cycles or the loop will jump at the seam.
+
 Live frames always take over while they arrive. Two seconds after the last live frame, the clip
 resumes where it paused. The status line under the instance name tells you which mode you are
 seeing.
