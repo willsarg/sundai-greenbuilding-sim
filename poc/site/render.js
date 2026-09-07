@@ -302,13 +302,28 @@ function riverShore(ctx, W, H, horizon, realistic) {
   }
 }
 
-function tower(ctx, corners, sideWidth, W, H, sideFar={top:.0,bottom:.0}) {
+// True perspective of the tower box (footprint 120 x 60 ft, 90 m tall) seen
+// from a camera on the far bank. Returns the south-face quad and the east-face
+// quad in screen space. yawDeg rotates the building about its vertical axis;
+// distM is the camera distance; bh is the tower's on-screen height at yaw 0.
+function projectTower(W, H, horizon, cx, bh, yawDeg, distM) {
+  const HGT=90, HALFW=36.6/2, HALFD=18.3/2, EYE=2;
+  const f=bh*distM/HGT, th=yawDeg*Math.PI/180, c=Math.cos(th), sn=Math.sin(th);
+  const P=(x,y,z)=>{ const xr=x*c-z*sn, zr=x*sn+z*c+distM;
+    return [cx+f*xr/zr, horizon+f*(EYE-y)/zr]; };
+  // South face is the -z side (toward the camera), east face is +x.
+  const south=[P(-HALFW,HGT,-HALFD),P(HALFW,HGT,-HALFD),P(HALFW,0,-HALFD),P(-HALFW,0,-HALFD)];
+  const east =[P(HALFW,HGT,-HALFD),P(HALFW,HGT,HALFD),P(HALFW,0,HALFD),P(HALFW,0,-HALFD)];
+  return {south,east};
+}
+function tower(ctx, corners, sideQuad, W, H) {
   const p=elevation(corners), [a,b,c,d]=corners;
   const unit=Math.max(.6,H/900);
   // East face, seen from the Esplanade as a lighter strip right of the grid.
-  const side=[ b,[b[0]+sideWidth,b[1]+sideFar.top],[c[0]+sideWidth,c[1]-sideFar.bottom],c ];
+  const sideWidth=sideQuad ? Math.max(0, sideQuad[1][0]-sideQuad[0][0]) : 0;
+  const side=sideQuad || [b,b,c,c];
   const sp=elevation(side);
-  const sg=ctx.createLinearGradient(b[0],0,b[0]+sideWidth,0);
+  const sg=ctx.createLinearGradient(b[0],0,b[0]+Math.max(1,sideWidth),0);
   sg.addColorStop(0,'#8a7f6c');sg.addColorStop(.5,'#968b77');sg.addColorStop(1,'#5f5850');
   if (sideWidth > 0) polygon(ctx,side,sg);
   // Blank concrete end wall with a few narrow slit windows; nothing lit.
@@ -412,18 +427,19 @@ function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
   const streetHeight=close ? Math.min(H,W*1.85) : Math.min(H*.78,W*1.70);
   const horizon=river ? (fit?H*.74:H*.68) : close ? H*.10+streetHeight : H*.90;
   sky(bg,W,H,horizon);campus(bg,W,H,horizon,river);
-  let corners,sideWidth,sideFar={top:0,bottom:0};
+  let corners,sideQuad=null;
   if(river) {
     const bh=fit?Math.min(H*.56,W*.80):Math.min(H*.36,W*.80),bw=bh*.36;
     LAY={k:fit?.62:1, S:bh/(H*.36)};
     if(angled) {
-      const fw=bw*.74, sw=bw*.50, x=W*.50-(fw+sw)/2, y=horizon-bh;
-      corners=[[x,y+bh*.055],[x+fw,y],[x+fw,horizon],[x,horizon-bh*.022]];
-      sideWidth=sw; sideFar={top:bh*.10,bottom:bh*.04};
+      // Camera on the far bank, ~590 m out, building turned 28 degrees so the
+      // east face shows. Convergence comes from the projection, not by hand.
+      const q=projectTower(W,H,horizon,W*.50,bh,28,590);
+      corners=q.south; sideQuad=q.east;
     } else {
       const x=W*.50-bw/2,y=horizon-bh;
       corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
-      sideWidth=0;
+      sideQuad=null;
     }
     const water=bg.createLinearGradient(0,horizon,0,H);
     // The Charles at night mirrors the warm haze near the far bank and goes
@@ -457,7 +473,7 @@ function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
     const bh=streetHeight,bw=bh*.43,x=W*.50-bw/2,y=horizon-bh;
     const taper=close?bw*.07:bw*.045;
     corners=[[x+taper,y],[x+bw-taper,y],[x+bw,horizon],[x,horizon]];
-    sideWidth=0;
+    sideQuad=null;
     const ground=bg.createLinearGradient(0,horizon,0,H);
     ground.addColorStop(0,'#4a4238');ground.addColorStop(.5,'#2e2b28');ground.addColorStop(1,'#15171c');
     bg.fillStyle=ground;bg.fillRect(0,horizon,W,H-horizon);
@@ -483,7 +499,7 @@ function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
     lamp(bg,x-sideWidth-bw*.14,horizon+H*.025,H*.085);
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }
-  const windows=tower(building,corners,sideWidth,W,H,sideFar);
+  const windows=tower(building,corners,sideQuad,W,H);
   if(river)riverShore(building,W,H,horizon,realistic);
   LAY={k:1,S:1};
   return {W,H,mode,realistic,fit,background,structure,live,windows,horizon,corners,
