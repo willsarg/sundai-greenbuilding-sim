@@ -101,12 +101,12 @@ function campus(ctx, W, H, horizon, river) {
   if(river) {
     // Great Dome: shallow limestone cap, curved masonry courses, a recessed
     // drum, and the columned facade below. An illustration at skyline scale.
-    const x=W*.10,y=horizon-H*.052,r=Math.min(H*.026,W*.033);
+    const x=W*.13,y=horizon-H*.072,r=Math.min(H*.040,W*.05);
     const hair=Math.max(.45,H/1500), rx=r*1.40, ry=r*.80;
     const stone=ctx.createLinearGradient(x-r*1.8,0,x+r*1.8,0);
     stone.addColorStop(0,'#555f61');stone.addColorStop(.32,'#8c8d7e');
     stone.addColorStop(.68,'#72796f');stone.addColorStop(1,'#414f55');
-    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.052);
+    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.072);
 
     // Shadowed bays behind the pale columns, with warm recessed windows.
     ctx.fillStyle='#273840';ctx.fillRect(x-r*1.48,y+r*.43,r*2.96,r*.91);
@@ -218,19 +218,20 @@ function riverShore(ctx, W, H, horizon, realistic) {
   }
 }
 
-function tower(ctx, corners, sideWidth, W, H) {
+function tower(ctx, corners, sideWidth, W, H, sideFar={top:.0,bottom:.0}) {
   const p=elevation(corners), [a,b,c,d]=corners;
   const unit=Math.max(.6,H/900);
   // East face, seen from the Esplanade as a lighter strip right of the grid.
-  const side=[ b,[b[0]+sideWidth,b[1]+sideWidth*.18],[c[0]+sideWidth,c[1]-.004*H],c ];
+  const side=[ b,[b[0]+sideWidth,b[1]+sideFar.top],[c[0]+sideWidth,c[1]-sideFar.bottom],c ];
   const sp=elevation(side);
   const sg=ctx.createLinearGradient(b[0],0,b[0]+sideWidth,0);
-  sg.addColorStop(0,'#8a7f6c');sg.addColorStop(.6,'#9a8f7b');sg.addColorStop(1,'#6e665a');
+  sg.addColorStop(0,'#8a7f6c');sg.addColorStop(.5,'#968b77');sg.addColorStop(1,'#5f5850');
   if (sideWidth > 0) polygon(ctx,side,sg);
   // Blank concrete end wall with a few narrow slit windows; nothing lit.
-  for(let i=1;sideWidth > 0 && i<4;i++) {
-    line(ctx,[sp(i/4,0),sp(i/4,1)],'rgba(40,32,24,.30)',unit*.9);
-    for(let r=0;r<17;r++)polygon(ctx,rect(sp,i/4-.05,.09+r*.045,.04,.022),'#2a2c2c');
+  const bays=sideWidth>(b[0]-a[0])*.35?6:3;
+  for(let i=1;sideWidth > 0 && i<=bays;i++) {
+    if(i<bays)line(ctx,[sp(i/bays,0),sp(i/bays,1)],'rgba(40,32,24,.30)',unit*.9);
+    for(let r=0;r<17;r++)polygon(ctx,rect(sp,i/bays-.10,.09+r*.045,.05,.022),'#2a2c2c');
   }
   const concrete=ctx.createLinearGradient(a[0],a[1],c[0],c[1]);
   // Warm tan concrete, darker at the crown, lifted by plaza and lobby light at the base.
@@ -327,11 +328,18 @@ function buildScene(ctx, W, H, mode, realistic=false) {
   const streetHeight=close ? Math.min(H,W*1.85) : Math.min(H*.78,W*1.70);
   const horizon=river ? H*.68 : close ? H*.10+streetHeight : H*.90;
   sky(bg,W,H,horizon);campus(bg,W,H,horizon,river);
-  let corners,sideWidth;
+  let corners,sideWidth,sideFar={top:0,bottom:0};
   if(river) {
-    const bh=Math.min(H*.36,W*.80),bw=bh*.36,x=W*.50-bw/2,y=horizon-bh;
-    corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
-    sideWidth=angled?bw*.28:0;
+    const bh=Math.min(H*.36,W*.80),bw=bh*.36;
+    if(angled) {
+      const fw=bw*.74, sw=bw*.50, x=W*.50-(fw+sw)/2, y=horizon-bh;
+      corners=[[x,y+bh*.055],[x+fw,y],[x+fw,horizon],[x,horizon-bh*.022]];
+      sideWidth=sw; sideFar={top:bh*.10,bottom:bh*.04};
+    } else {
+      const x=W*.50-bw/2,y=horizon-bh;
+      corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
+      sideWidth=0;
+    }
     const water=bg.createLinearGradient(0,horizon,0,H);
     // The Charles at night mirrors the warm haze near the far bank and goes
     // near-black toward the viewer's shore.
@@ -390,7 +398,7 @@ function buildScene(ctx, W, H, mode, realistic=false) {
     lamp(bg,x-sideWidth-bw*.14,horizon+H*.025,H*.085);
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }
-  const windows=tower(building,corners,sideWidth,W,H);
+  const windows=tower(building,corners,sideWidth,W,H,sideFar);
   if(river)riverShore(building,W,H,horizon,realistic);
   return {W,H,mode,realistic,background,structure,live,windows,horizon,corners,
     reflection: river ? surface(ctx,W,H) : null};
