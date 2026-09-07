@@ -98,6 +98,7 @@ function campus(ctx, W, H, horizon, river) {
       }
     }
   }
+  if(river) { hayden(ctx,W,H,horizon); stata(ctx,W,H,horizon); mediaLab(ctx,W,H,horizon); }
   if(river) {
     // Great Dome: shallow limestone cap, curved masonry courses, a recessed
     // drum, and the columned facade below. An illustration at skyline scale.
@@ -169,6 +170,67 @@ function campus(ctx, W, H, horizon, river) {
     ctx.fillStyle='#607577';ctx.beginPath();ctx.ellipse(x,y-ry+r*.012,r*.10,r*.015,0,0,Math.PI*2);ctx.fill();
   }
 }
+
+// MIT landmarks along the river, stylised (artistic liberty outside the grid,
+// see docs/RENDERING.md). Drawn from memory of the buildings, not from photos.
+function hayden(ctx, W, H, horizon) {
+  // Hayden Library: long low limestone block on Memorial Drive, tall narrow bays.
+  const x=W*.30, w=W*.13, h=H*.075, y=horizon-h;
+  const g=ctx.createLinearGradient(x,y,x,horizon);
+  g.addColorStop(0,'#7d7466');g.addColorStop(1,'#4e4840');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='#8c8374';ctx.fillRect(x,y,w,Math.max(1,H*.003));
+  const bays=14, bw=w/bays;
+  for(let i=0;i<bays;i++) {
+    const bx=x+i*bw;
+    ctx.fillStyle='#2a2823';ctx.fillRect(bx+bw*.25,y+h*.18,bw*.5,h*.62);
+    if(i%3!==1){ctx.fillStyle=`rgba(255,220,160,${.25+noise(i+31)*.35})`;ctx.fillRect(bx+bw*.3,y+h*.22,bw*.4,h*.5);}
+    ctx.fillStyle='#6f665a';ctx.fillRect(bx,y+h*.15,Math.max(1,bw*.12),h*.7);
+  }
+}
+function stata(ctx, W, H, horizon) {
+  // Stata Center (CSAIL): a huddle of tilted, colliding volumes in brushed
+  // metal and brick, poking up behind the tower's right shoulder.
+  const x=W*.585, base=horizon-H*.012, h=H*.095;
+  const shapes=[
+    {pts:[[0,0],[.16,-.02],[.19,-.72],[.03,-.80]],c:'#5e5a58'},
+    {pts:[[.14,0],[.30,0],[.33,-.60],[.12,-.66]],c:'#5a3226'},
+    {pts:[[.27,0],[.42,-.04],[.38,-.95],[.24,-.82]],c:'#6f6d6b'},
+    {pts:[[.40,0],[.55,0],[.60,-.55],[.44,-.62]],c:'#6e5a2e'},
+    {pts:[[.52,-.05],[.66,0],[.62,-.78],[.50,-.70]],c:'#636669'},
+  ];
+  for(const {pts,c} of shapes) {
+    const p=pts.map(([u,v])=>[x+u*W*.13,base+v*h]);
+    polygon(ctx,p,c,'rgba(20,16,12,.35)',Math.max(.6,H/1400));
+    line(ctx,[p[3],p[2]],'rgba(200,190,170,.35)',Math.max(.6,H/1400));
+    // Panel seams and a few lit windows so it reads as metal, not paper.
+    const [a,b,cc,d]=p;
+    for(let t=.2;t<1;t+=.2) line(ctx,[[a[0]+(d[0]-a[0])*t,a[1]+(d[1]-a[1])*t],[b[0]+(cc[0]-b[0])*t,b[1]+(cc[1]-b[1])*t]],'rgba(20,16,12,.18)',Math.max(.5,H/1600));
+    for(let i=0;i<6;i++){const t=.15+i*.14,u=.3+noise(i+t*7)*.4;
+      const px=a[0]+(b[0]-a[0])*u+(d[0]-a[0])*t, py=a[1]+(b[1]-a[1])*u+(d[1]-a[1])*t;
+      if(noise(px+py)>.5){ctx.fillStyle='rgba(255,225,170,.55)';ctx.fillRect(px,py,W*.003,H*.005);}}
+  }
+}
+function mediaLab(ctx, W, H, horizon) {
+  // Media Lab (E14): a glass box behind a fine aluminium screen, glowing from
+  // inside, with the cantilevered upper block.
+  const x=W*.715, w=W*.085, h=H*.085, y=horizon-h;
+  const glow=ctx.createLinearGradient(x,y,x,horizon);
+  glow.addColorStop(0,'#6f6a60');glow.addColorStop(.5,'#5e594f');glow.addColorStop(1,'#3e3a34');
+  ctx.fillStyle=glow;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='#7a756a';ctx.fillRect(x-w*.06,y,w*1.12,h*.3);      // upper block overhang
+  ctx.fillStyle='#2f2d2a';ctx.fillRect(x-w*.06,y+h*.3,w*1.12,Math.max(1,H*.003));
+  // Screen: dense fine grid over the glass; a few dark floors for depth.
+  const cols=18, rows=9, cw=w/cols, rh=h/rows;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++) {
+    const lit=noise(r*31+c*7)>.35;
+    ctx.fillStyle=lit?`rgba(255,236,200,${.22+noise(c+r)*.30})`:'rgba(30,28,25,.5)';
+    ctx.fillRect(x+c*cw+cw*.15,y+r*rh+rh*.15,cw*.7,rh*.7);
+  }
+  ctx.save();ctx.globalCompositeOperation='screen';
+  glow_(ctx,x+w/2,y+h*.6,w*.9,'255,225,180',.08);ctx.restore();
+}
+const glow_=glow;
 
 function tree(ctx, x, y, size, seed) {
   line(ctx,[[x,y],[x-size*.04,y-size*.64]],'#15110e',size*.045);
