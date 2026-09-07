@@ -45,7 +45,13 @@ addEventListener("resize", fit); fit();
 let frame = new Uint8Array(ROWS * COLS * 3);
 const ring = [];
 const debug = (window.__gb = { paints: 0, draws: 0, resizes: 0, view, error: null, presenter, redraw: () => { dirty = true; } });
-function paint() {
+// The display itself is capped at 30 fps, so the viewer renders at 30 too:
+// nothing on screen can change faster, and it keeps phones cool.
+const FRAME_MS = 1000 / 30;
+let lastPaint = 0;
+function paint(now) {
+  if (now - lastPaint < FRAME_MS - 1) { requestAnimationFrame(paint); return; }
+  lastPaint = now;
   debug.paints++; debug.view = view;
   if (ring.length) { frame = ring.shift(); dirty = true; }
   if (dirty) {
