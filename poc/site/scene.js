@@ -45,18 +45,23 @@ export function createPresenter(target) {
 
   let W = 0, H = 0;
   return {
-    bloom,
+    bloom, source, texture, renderer,
     resize(w, h) {
+      if (w === W && h === H) return;
       W = w; H = h;
       source.width = w; source.height = h;
+      // Three.js allocates immutable GPU storage at the canvas's size on first
+      // upload; after a resize the old allocation must be released or every
+      // later upload fails with GL_INVALID_VALUE and the stale image stays.
+      texture.dispose();
       renderer.setSize(w, h, false);
       composer.setSize(w, h);
       // Bloom at half resolution keeps phones comfortable.
       bloom.resolution.set(Math.round(w / 2), Math.round(h / 2));
     },
-    draw(frame, view) {
+    draw(frame, view, opts) {
       if (!W || !H) return;
-      painters[view](sctx, frame, W, H);
+      painters[view](sctx, frame, W, H, opts);
       texture.needsUpdate = true;
       composer.render();
     },
@@ -70,7 +75,7 @@ export function createFallback(target) {
   let W = 0, H = 0;
   return {
     resize(w, h) { W = w; H = h; target.width = w; target.height = h; },
-    draw(frame, view) { if (W && H) painters[view](ctx, frame, W, H); },
+    draw(frame, view, opts) { if (W && H) painters[view](ctx, frame, W, H, opts); },
     dispose() {},
   };
 }

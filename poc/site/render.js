@@ -190,10 +190,12 @@ function lamp(ctx, x, y, h) {
   glow(ctx,x,y,38*s,'223,174,108',.08);
 }
 
-function riverShore(ctx, W, H, horizon) {
+function riverShore(ctx, W, H, horizon, realistic) {
   // A continuous canopy, with a retaining wall and sailing pavilion at the water.
   for(let i=0;i<110;i++) {
-    const x=W*i/109, h=H*(.036+noise(i+810)*.024);
+    // Realistic: the Memorial Drive canopy actually hides the bottom two
+    // display rows from the Esplanade. Idealised: only the colonnade is hidden.
+    const x=W*i/109, h=realistic ? H*(.066+noise(i+810)*.028) : H*(.036+noise(i+810)*.024);
     tree(ctx,x,horizon-H*.004,h,900+i*31);
   }
   ctx.fillStyle='#4c5553';ctx.fillRect(0,horizon-H*.010,W,H*.010);
@@ -317,7 +319,7 @@ function tower(ctx, corners, sideWidth, W, H) {
   return windows;
 }
 
-function buildScene(ctx, W, H, mode) {
+function buildScene(ctx, W, H, mode, realistic=false) {
   const river=mode==='river'||mode==='riverAngle', angled=mode==='riverAngle', close=mode==='close';
   const background=surface(ctx,W,H), structure=surface(ctx,W,H), live=surface(ctx,W,H);
   const bg=background.getContext('2d'), building=structure.getContext('2d');
@@ -389,8 +391,8 @@ function buildScene(ctx, W, H, mode) {
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }
   const windows=tower(building,corners,sideWidth,W,H);
-  if(river)riverShore(building,W,H,horizon);
-  return {W,H,mode,background,structure,live,windows,horizon,corners,
+  if(river)riverShore(building,W,H,horizon,realistic);
+  return {W,H,mode,realistic,background,structure,live,windows,horizon,corners,
     reflection: river ? surface(ctx,W,H) : null};
 }
 
@@ -425,12 +427,14 @@ function lightWindow(ctx, {points,index}, frame) {
   ctx.restore();
 }
 
-function render(ctx, frame, W, H, mode) {
+function render(ctx, frame, W, H, mode, opts={}) {
   if(W<=0||H<=0)return;
-  let scene=scenes.get(ctx);
-  if(!scene||scene.W!==W||scene.H!==H||scene.mode!==mode) {
-    scene=buildScene(ctx,W,H,mode);scenes.set(ctx,scene);
+  const realistic=!!opts.realistic;
+  let scene=scenes.get(ctx), rebuilt=false;
+  if(!scene||scene.W!==W||scene.H!==H||scene.mode!==mode||scene.realistic!==realistic) {
+    scene=buildScene(ctx,W,H,mode,realistic);scenes.set(ctx,scene);rebuilt=true;
   }
+  if(typeof window!=='undefined')window.__gbRender={mode,realistic,rebuilt,W,H,sceneMode:scene.mode,n:((window.__gbRender||{}).n||0)+1};
   const {background,structure,live,windows,horizon}=scene;
   const lctx=live.getContext('2d');
   lctx.clearRect(0,0,W,H);lctx.drawImage(structure,0,0);
@@ -462,7 +466,7 @@ function render(ctx, frame, W, H, mode) {
   vignette.addColorStop(0,'rgba(3,9,17,0)');vignette.addColorStop(1,'rgba(3,9,17,.48)');
   ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
 }
-export function renderClose(ctx,frame,W,H){render(ctx,frame,W,H,'close');}
-export function renderStreet(ctx,frame,W,H){render(ctx,frame,W,H,'street');}
-export function renderRiver(ctx,frame,W,H){render(ctx,frame,W,H,'river');}
-export function renderRiverAngle(ctx,frame,W,H){render(ctx,frame,W,H,'riverAngle');}
+export function renderClose(ctx,frame,W,H,o){render(ctx,frame,W,H,'close',o);}
+export function renderStreet(ctx,frame,W,H,o){render(ctx,frame,W,H,'street',o);}
+export function renderRiver(ctx,frame,W,H,o){render(ctx,frame,W,H,'river',o);}
+export function renderRiverAngle(ctx,frame,W,H,o){render(ctx,frame,W,H,'riverAngle',o);}
