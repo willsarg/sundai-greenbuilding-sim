@@ -16,17 +16,20 @@ const params = new URLSearchParams(location.search);
 let view = VIEWS.includes(params.get("view")) ? params.get("view") : "close";
 $("view").value = view;
 $("real").checked = params.get("real") === "1";
+$("fit").checked = params.get("fit") === "1";
 const isRiver = () => view.startsWith("river");
-$("realRow").hidden = !isRiver();
+$("realRow").hidden = !isRiver(); $("fitRow").hidden = !isRiver();
 function syncUrl() {
   const u = new URL(location);
   u.searchParams.set("view", view);
   if (isRiver() && $("real").checked) u.searchParams.set("real", "1"); else u.searchParams.delete("real");
+  if (isRiver() && $("fit").checked) u.searchParams.set("fit", "1"); else u.searchParams.delete("fit");
   history.replaceState(null, "", u);
 }
-$("view").onchange = () => { view = $("view").value; $("realRow").hidden = !isRiver(); syncUrl(); dirty = true; };
+$("view").onchange = () => { view = $("view").value; $("realRow").hidden = !isRiver(); $("fitRow").hidden = !isRiver(); syncUrl(); dirty = true; };
 $("real").onchange = () => { syncUrl(); dirty = true; };
-const opts = () => ({ realistic: isRiver() && $("real").checked });
+$("fit").onchange = () => { syncUrl(); dirty = true; };
+const opts = () => ({ realistic: isRiver() && $("real").checked, fit: isRiver() && $("fit").checked });
 syncUrl();
 
 const c = $("c");

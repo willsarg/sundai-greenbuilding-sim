@@ -7,6 +7,10 @@
 // are driven solely by the incoming 2026 17x9, top-to-bottom RGB frame.
 export const ROWS = 17, COLS = 9;
 const scenes = new WeakMap();
+// River-view layout knobs, set per scene build. k squeezes skyline x toward
+// the centre (display-first framing); S scales landmark size with the tower.
+let LAY={k:1,S:1};
+const LX=(x)=>.5+(x-.5)*LAY.k, LS=()=>LAY.S, LW=()=>LAY.S*LAY.k;
 const rgba = (r, g, b, a) => `rgba(${r},${g},${b},${a})`;
 const noise = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
@@ -79,7 +83,7 @@ function campus(ctx, W, H, horizon, river) {
        [.62,.06,.075],[.68,.05,.09],[.72,.05,.085],[.755,.04,.216],[.795,.045,.245],[.845,.05,.08],[.92,.055,.29],[.975,.05,.10]]
     : [[-.03,.28,.23],[.23,.14,.12],[.74,.30,.18]];
   for (const [x,w,h] of buildings) {
-    const bx=x*W, by=horizon-h*H, bw=w*W, bh=h*H;
+    const bx=(river?LX(x):x)*W, by=horizon-h*H*(river?LS():1), bw=w*W*(river?LW():1), bh=h*H*(river?LS():1);
     // Farther (shorter) blocks sit lighter in the haze; nearer ones are darker.
     const haze=river?Math.min(1,h/.14):1;
     ctx.fillStyle=river?`rgb(${58-haze*18},${52-haze*16},${48-haze*14})`:'#2a2521';
@@ -103,7 +107,7 @@ function campus(ctx, W, H, horizon, river) {
     // Great Dome (Building 10): a tall Ionic portico fills the facade, an
     // entablature and low windowed drum sit above it, and a rounded
     // Pantheon-style dome with an oculus cap crowns it. Sized from OSM height.
-    const x=W*.07, total=H*.185, base=horizon, r=Math.min(H*.054,W*.07);
+    const x=W*LX(.07), total=H*.185*LS(), base=horizon, r=Math.min(H*.054,W*.07)*LW();
     const hair=Math.max(.45,H/1500);
     const portH=total*.50, entH=total*.07, drumH=total*.10, domeH=total*.33;
     const bw=r*3.4;
@@ -113,7 +117,7 @@ function campus(ctx, W, H, horizon, river) {
     // Maclaurin wings (Buildings 3 and 4, 27 m): long limestone ranges either
     // side of Building 10, with a pilaster rhythm and the carved frieze of
     // scientists' names along the top. Apparent height ~.11H.
-    const wingH=H*.11, wy=base-wingH, wingW=bw*1.35;
+    const wingH=H*.11*LS(), wy=base-wingH, wingW=bw*1.35;
     for(const dir of [-1,1]) {
       const wx=dir<0 ? x-bw/2-wingW : x+bw/2;
       const wg=ctx.createLinearGradient(0,wy,0,base);
@@ -180,7 +184,7 @@ function campus(ctx, W, H, horizon, river) {
 // see docs/RENDERING.md). Drawn from memory of the buildings, not from photos.
 function hayden(ctx, W, H, horizon) {
   // Hayden Library: long low limestone block on Memorial Drive, tall narrow bays.
-  const x=W*.355, w=W*.12, h=H*.105, y=horizon-h;
+  const x=W*LX(.355), w=W*.12*LW(), h=H*.105*LS(), y=horizon-h;
   const g=ctx.createLinearGradient(x,y,x,horizon);
   g.addColorStop(0,'#7d7466');g.addColorStop(1,'#4e4840');
   ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
@@ -196,7 +200,7 @@ function hayden(ctx, W, H, horizon) {
 function stata(ctx, W, H, horizon) {
   // Stata Center (CSAIL): a huddle of tilted, colliding volumes in brushed
   // metal and brick, poking up behind the tower's right shoulder.
-  const x=W*.265, base=horizon-H*.012, h=H*.137;
+  const x=W*LX(.265), base=horizon-H*.012, h=H*.137*LS();
   const shapes=[
     {pts:[[0,0],[.16,-.02],[.19,-.72],[.03,-.80]],c:'#5e5a58'},
     {pts:[[.14,0],[.30,0],[.33,-.60],[.12,-.66]],c:'#5a3226'},
@@ -205,7 +209,7 @@ function stata(ctx, W, H, horizon) {
     {pts:[[.52,-.05],[.66,0],[.62,-.78],[.50,-.70]],c:'#636669'},
   ];
   for(const {pts,c} of shapes) {
-    const p=pts.map(([u,v])=>[x+u*W*.13,base+v*h]);
+    const p=pts.map(([u,v])=>[x+u*W*.13*LW(),base+v*h]);
     polygon(ctx,p,c,'rgba(20,16,12,.35)',Math.max(.6,H/1400));
     line(ctx,[p[3],p[2]],'rgba(200,190,170,.35)',Math.max(.6,H/1400));
     // Panel seams and a few lit windows so it reads as metal, not paper.
@@ -218,7 +222,7 @@ function stata(ctx, W, H, horizon) {
 }
 function walker(ctx, W, H, horizon) {
   // Walker Memorial: limestone block with a tall Ionic column screen facing the river.
-  const w=W*.075, x=W*.70-w/2, h=H*.125, y=horizon-h;
+  const w=W*.075*LW(), x=W*LX(.70)-w/2, h=H*.125*LS(), y=horizon-h;
   const g=ctx.createLinearGradient(x,y,x,horizon);
   g.addColorStop(0,'#867c6c');g.addColorStop(1,'#544d43');
   ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
@@ -232,7 +236,7 @@ function walker(ctx, W, H, horizon) {
 function mediaLab(ctx, W, H, horizon) {
   // Media Lab (E14): a glass box behind a fine aluminium screen, glowing from
   // inside, with the cantilevered upper block.
-  const x=W*.77, w=W*.075, h=H*.122, y=horizon-h;
+  const x=W*LX(.77), w=W*.075*LW(), h=H*.122*LS(), y=horizon-h;
   const glow=ctx.createLinearGradient(x,y,x,horizon);
   glow.addColorStop(0,'#6f6a60');glow.addColorStop(.5,'#5e594f');glow.addColorStop(1,'#3e3a34');
   ctx.fillStyle=glow;ctx.fillRect(x,y,w,h);
@@ -275,12 +279,12 @@ function riverShore(ctx, W, H, horizon, realistic) {
   for(let i=0;i<110;i++) {
     // Realistic: the Memorial Drive canopy actually hides the bottom two
     // display rows from the Esplanade. Idealised: only the colonnade is hidden.
-    const x=W*i/109, h=realistic ? H*(.066+noise(i+810)*.028) : H*(.036+noise(i+810)*.024);
+    const x=W*i/109, h=(realistic ? H*(.066+noise(i+810)*.028) : H*(.036+noise(i+810)*.024))*LS();
     tree(ctx,x,horizon-H*.004,h,900+i*31);
   }
   ctx.fillStyle='#4c5553';ctx.fillRect(0,horizon-H*.010,W,H*.010);
   line(ctx,[[0,horizon-H*.011],[W,horizon-H*.011]],'#788078',Math.max(.8,H/850));
-  const px=W*.83, py=horizon-H*.010, pw=Math.min(W*.085,H*.13), ph=H*.030;
+  const px=W*LX(.83), py=horizon-H*.010, pw=Math.min(W*.085,H*.13)*LW(), ph=H*.030*LS();
   ctx.fillStyle='#7c8178';ctx.fillRect(px,py-ph,pw,ph);
   polygon(ctx,[[px-pw*.08,py-ph],[px+pw*.18,py-ph*1.6],[px+pw*.39,py-ph],
     [px+pw*.65,py-ph*1.6],[px+pw*1.08,py-ph]],'#b1b1a0');
@@ -291,7 +295,7 @@ function riverShore(ctx, W, H, horizon, realistic) {
   line(ctx,[[px-pw*.4,py+H*.005],[px+pw*1.3,py+H*.005]],'#8b8979',Math.max(1,H*.002));
   // Small dockside masts and furled boats, subordinate to the live display.
   for(let i=0;i<70;i++) {
-    const x=W*(.62+i*.0055),h=H*(.016+noise(i+9)*.014);
+    const x=W*LX(.62+i*.0055),h=H*(.016+noise(i+9)*.014)*LS();
     line(ctx,[[x,horizon],[x,horizon-h]],'#7b8582',Math.max(.5,W/2200));
     polygon(ctx,[[x,horizon-h*.7],[x+W*.003,horizon-H*.004],[x-W*.002,horizon-H*.004]],
       i%3?'#957569':'#aaa898');
@@ -400,17 +404,18 @@ function tower(ctx, corners, sideWidth, W, H, sideFar={top:.0,bottom:.0}) {
   return windows;
 }
 
-function buildScene(ctx, W, H, mode, realistic=false) {
+function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
   const river=mode==='river'||mode==='riverAngle', angled=mode==='riverAngle', close=mode==='close';
   const background=surface(ctx,W,H), structure=surface(ctx,W,H), live=surface(ctx,W,H);
   const bg=background.getContext('2d'), building=structure.getContext('2d');
   // Close view crops the lobby/plaza, preserving the full display and rooftop.
   const streetHeight=close ? Math.min(H,W*1.85) : Math.min(H*.78,W*1.70);
-  const horizon=river ? H*.68 : close ? H*.10+streetHeight : H*.90;
+  const horizon=river ? (fit?H*.74:H*.68) : close ? H*.10+streetHeight : H*.90;
   sky(bg,W,H,horizon);campus(bg,W,H,horizon,river);
   let corners,sideWidth,sideFar={top:0,bottom:0};
   if(river) {
-    const bh=Math.min(H*.36,W*.80),bw=bh*.36;
+    const bh=fit?Math.min(H*.56,W*.80):Math.min(H*.36,W*.80),bw=bh*.36;
+    LAY={k:fit?.62:1, S:bh/(H*.36)};
     if(angled) {
       const fw=bw*.74, sw=bw*.50, x=W*.50-(fw+sw)/2, y=horizon-bh;
       corners=[[x,y+bh*.055],[x+fw,y],[x+fw,horizon],[x,horizon-bh*.022]];
@@ -480,7 +485,8 @@ function buildScene(ctx, W, H, mode, realistic=false) {
   }
   const windows=tower(building,corners,sideWidth,W,H,sideFar);
   if(river)riverShore(building,W,H,horizon,realistic);
-  return {W,H,mode,realistic,background,structure,live,windows,horizon,corners,
+  LAY={k:1,S:1};
+  return {W,H,mode,realistic,fit,background,structure,live,windows,horizon,corners,
     reflection: river ? surface(ctx,W,H) : null};
 }
 
@@ -517,10 +523,10 @@ function lightWindow(ctx, {points,index}, frame) {
 
 function render(ctx, frame, W, H, mode, opts={}) {
   if(W<=0||H<=0)return;
-  const realistic=!!opts.realistic;
+  const realistic=!!opts.realistic, fit=!!opts.fit;
   let scene=scenes.get(ctx), rebuilt=false;
-  if(!scene||scene.W!==W||scene.H!==H||scene.mode!==mode||scene.realistic!==realistic) {
-    scene=buildScene(ctx,W,H,mode,realistic);scenes.set(ctx,scene);rebuilt=true;
+  if(!scene||scene.W!==W||scene.H!==H||scene.mode!==mode||scene.realistic!==realistic||scene.fit!==fit) {
+    scene=buildScene(ctx,W,H,mode,realistic,fit);scenes.set(ctx,scene);rebuilt=true;
   }
   if(typeof window!=='undefined')window.__gbRender={mode,realistic,rebuilt,W,H,sceneMode:scene.mode,n:((window.__gbRender||{}).n||0)+1};
   const {background,structure,live,windows,horizon}=scene;
