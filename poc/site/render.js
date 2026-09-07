@@ -119,7 +119,6 @@ function campus(ctx, W, H, horizon, river) {
     ctx.fillStyle=river?'rgba(120,108,92,.35)':'#4a413a';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
     if(river&&h>.09) { // rooftop mechanical penthouse on the tall Kendall blocks
       ctx.fillStyle='#2e2a27';ctx.fillRect(bx+bw*.3,by-H*.012,bw*.4,H*.012);
-      if(h>.2) BEACONS.push([bx+bw*.5,by-H*.014,Math.max(1.5,H/600)]);
     }
     const spacing=Math.max(5, H*(river?.009:.016));
     for(let yy=by+spacing; yy<horizon-spacing; yy+=spacing*1.65) {
