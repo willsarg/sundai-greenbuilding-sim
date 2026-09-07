@@ -27,7 +27,10 @@ let frame = new Uint8Array(ROWS * COLS * 3);
 const ring = [];
 function paint() {
   if (ring.length) { frame = ring.shift(); dirty = true; }
-  if (dirty) { presenter.draw(frame, view); dirty = false; }
+  if (dirty) {
+    try { presenter.draw(frame, view); } catch (e) { console.error("draw failed", e); }
+    dirty = false;
+  }
   requestAnimationFrame(paint);
 }
 requestAnimationFrame(paint);
