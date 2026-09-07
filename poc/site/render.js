@@ -76,7 +76,7 @@ function sky(ctx, W, H, horizon) {
 function campus(ctx, W, H, horizon, river) {
   const buildings = river
     ? [[-.02,.14,.045],[.11,.10,.038],[.24,.16,.05],[.36,.09,.042],[.55,.12,.06],[.63,.08,.05],
-       [.60,.07,.09],[.655,.06,.115],[.71,.05,.095],[.745,.06,.075],[.88,.10,.06],[.95,.08,.05]]
+       [.62,.06,.075],[.68,.05,.09],[.72,.05,.085],[.755,.04,.216],[.795,.045,.245],[.845,.05,.08],[.92,.055,.29],[.975,.05,.10]]
     : [[-.03,.28,.23],[.23,.14,.12],[.74,.30,.18]];
   for (const [x,w,h] of buildings) {
     const bx=x*W, by=horizon-h*H, bw=w*W, bh=h*H;
@@ -98,16 +98,16 @@ function campus(ctx, W, H, horizon, river) {
       }
     }
   }
-  if(river) { hayden(ctx,W,H,horizon); stata(ctx,W,H,horizon); mediaLab(ctx,W,H,horizon); }
+  if(river) { hayden(ctx,W,H,horizon); stata(ctx,W,H,horizon); mediaLab(ctx,W,H,horizon); walker(ctx,W,H,horizon); }
   if(river) {
     // Great Dome: shallow limestone cap, curved masonry courses, a recessed
     // drum, and the columned facade below. An illustration at skyline scale.
-    const x=W*.07,y=horizon-H*.072,r=Math.min(H*.040,W*.05);
+    const x=W*.07,y=horizon-H*.185,r=Math.min(H*.054,W*.07);
     const hair=Math.max(.45,H/1500), rx=r*1.40, ry=r*.80;
     const stone=ctx.createLinearGradient(x-r*1.8,0,x+r*1.8,0);
     stone.addColorStop(0,'#555f61');stone.addColorStop(.32,'#8c8d7e');
     stone.addColorStop(.68,'#72796f');stone.addColorStop(1,'#414f55');
-    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.072);
+    ctx.fillStyle=stone;ctx.fillRect(x-r*1.72,y,r*3.44,H*.185);
 
     // Shadowed bays behind the pale columns, with warm recessed windows.
     ctx.fillStyle='#273840';ctx.fillRect(x-r*1.48,y+r*.43,r*2.96,r*.91);
@@ -175,7 +175,7 @@ function campus(ctx, W, H, horizon, river) {
 // see docs/RENDERING.md). Drawn from memory of the buildings, not from photos.
 function hayden(ctx, W, H, horizon) {
   // Hayden Library: long low limestone block on Memorial Drive, tall narrow bays.
-  const x=W*.355, w=W*.12, h=H*.075, y=horizon-h;
+  const x=W*.355, w=W*.12, h=H*.105, y=horizon-h;
   const g=ctx.createLinearGradient(x,y,x,horizon);
   g.addColorStop(0,'#7d7466');g.addColorStop(1,'#4e4840');
   ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
@@ -191,7 +191,7 @@ function hayden(ctx, W, H, horizon) {
 function stata(ctx, W, H, horizon) {
   // Stata Center (CSAIL): a huddle of tilted, colliding volumes in brushed
   // metal and brick, poking up behind the tower's right shoulder.
-  const x=W*.265, base=horizon-H*.012, h=H*.095;
+  const x=W*.265, base=horizon-H*.012, h=H*.137;
   const shapes=[
     {pts:[[0,0],[.16,-.02],[.19,-.72],[.03,-.80]],c:'#5e5a58'},
     {pts:[[.14,0],[.30,0],[.33,-.60],[.12,-.66]],c:'#5a3226'},
@@ -211,10 +211,23 @@ function stata(ctx, W, H, horizon) {
       if(noise(px+py)>.5){ctx.fillStyle='rgba(255,225,170,.55)';ctx.fillRect(px,py,W*.003,H*.005);}}
   }
 }
+function walker(ctx, W, H, horizon) {
+  // Walker Memorial: limestone block with a tall Ionic column screen facing the river.
+  const w=W*.075, x=W*.70-w/2, h=H*.125, y=horizon-h;
+  const g=ctx.createLinearGradient(x,y,x,horizon);
+  g.addColorStop(0,'#867c6c');g.addColorStop(1,'#544d43');
+  ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='#9a917f';ctx.fillRect(x-w*.03,y,w*1.06,h*.08);           // entablature
+  ctx.fillStyle='#2b2823';ctx.fillRect(x+w*.08,y+h*.12,w*.84,h*.62);        // shadowed portico
+  for(let i=0;i<7;i++){const cx=x+w*(.10+i*.132);
+    ctx.fillStyle='#b3a88f';ctx.fillRect(cx,y+h*.12,w*.045,h*.62);
+    ctx.fillStyle='rgba(255,220,160,.35)';ctx.fillRect(cx+w*.075,y+h*.30,w*.04,h*.25);}
+  ctx.fillStyle='#6e6558';ctx.fillRect(x-w*.05,y+h*.74,w*1.10,h*.26);      // base
+}
 function mediaLab(ctx, W, H, horizon) {
   // Media Lab (E14): a glass box behind a fine aluminium screen, glowing from
   // inside, with the cantilevered upper block.
-  const x=W*.77, w=W*.085, h=H*.085, y=horizon-h;
+  const x=W*.77, w=W*.075, h=H*.122, y=horizon-h;
   const glow=ctx.createLinearGradient(x,y,x,horizon);
   glow.addColorStop(0,'#6f6a60');glow.addColorStop(.5,'#5e594f');glow.addColorStop(1,'#3e3a34');
   ctx.fillStyle=glow;ctx.fillRect(x,y,w,h);
@@ -262,7 +275,7 @@ function riverShore(ctx, W, H, horizon, realistic) {
   }
   ctx.fillStyle='#4c5553';ctx.fillRect(0,horizon-H*.010,W,H*.010);
   line(ctx,[[0,horizon-H*.011],[W,horizon-H*.011]],'#788078',Math.max(.8,H/850));
-  const px=W*.83, py=horizon-H*.010, pw=Math.min(W*.085,H*.13), ph=H*.024;
+  const px=W*.83, py=horizon-H*.010, pw=Math.min(W*.085,H*.13), ph=H*.030;
   ctx.fillStyle='#7c8178';ctx.fillRect(px,py-ph,pw,ph);
   polygon(ctx,[[px-pw*.08,py-ph],[px+pw*.18,py-ph*1.6],[px+pw*.39,py-ph],
     [px+pw*.65,py-ph*1.6],[px+pw*1.08,py-ph]],'#b1b1a0');

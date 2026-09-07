@@ -34,3 +34,20 @@ artistic. Camera assumed on the Esplanade due south of the tower at
 | Wiesner (E15) | 42.36081, -71.08761 | +12.5 | .75 |
 | Media Lab (E14) | 42.36043, -71.08730 | +15.6 | .81 |
 | Sailing Pavilion | 42.35851, -71.08779 | +18.1 | .86 |
+
+Heights (OSM `height` tags, 2026-09-07) and apparent size relative to the tower
+(height/distance, tower = 1.00) from the same camera:
+
+| Landmark | height m | apparent |
+| --- | --- | --- |
+| Green Building | 90 | 1.00 |
+| Great Dome (Building 10, top of dome) | 58 | 0.67 |
+| Stata Center | 43.1 | 0.38 |
+| Hayden Library | ~20 (no OSM tag; estimate) | ~0.29 |
+| Walker Memorial | 26.3 | 0.35 |
+| Media Lab (E14) | 32.5 | 0.34 |
+| Wiesner (E15) | 22 | 0.22 |
+| Kendall: Google (18 fl) | 81.7 | 0.60 at x .78 |
+| Kendall: E28 (17 fl) | 85.4 | 0.68 at x .81 |
+| Kendall: E37 tower (28 fl) | 102.1 | 0.81 at x .95 |
+| Sailing Pavilion | ~8 (2 levels) | ~0.13 |
