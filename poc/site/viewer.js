@@ -51,6 +51,8 @@ function paint() {
   if (dirty) {
     try { presenter.draw(frame, view, opts()); debug.draws++; } catch (e) { debug.error = String(e); console.error("draw failed", e); }
     dirty = false;
+  } else {
+    presenter.tick();
   }
   requestAnimationFrame(paint);
 }

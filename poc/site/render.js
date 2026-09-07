@@ -524,6 +524,7 @@ function render(ctx, frame, W, H, mode, opts={}) {
     scene=buildScene(ctx,W,H,mode,realistic,fit);scenes.set(ctx,scene);rebuilt=true;
   }
   if(typeof window!=='undefined')window.__gbRender={mode,realistic,rebuilt,W,H,sceneMode:scene.mode,n:((window.__gbRender||{}).n||0)+1};
+  render.last={horizon:scene.horizon/H, water:mode==='river'};
   const {background,structure,live,windows,horizon}=scene;
   const lctx=live.getContext('2d');
   lctx.clearRect(0,0,W,H);lctx.drawImage(structure,0,0);
@@ -555,6 +556,6 @@ function render(ctx, frame, W, H, mode, opts={}) {
   vignette.addColorStop(0,'rgba(3,9,17,0)');vignette.addColorStop(1,'rgba(3,9,17,.48)');
   ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
 }
-export function renderClose(ctx,frame,W,H,o){render(ctx,frame,W,H,'close',o);}
-export function renderStreet(ctx,frame,W,H,o){render(ctx,frame,W,H,'street',o);}
-export function renderRiver(ctx,frame,W,H,o){render(ctx,frame,W,H,'river',o);}
+export function renderClose(ctx,frame,W,H,o){render(ctx,frame,W,H,'close',o);renderClose.last=render.last;}
+export function renderStreet(ctx,frame,W,H,o){render(ctx,frame,W,H,'street',o);renderStreet.last=render.last;}
+export function renderRiver(ctx,frame,W,H,o){render(ctx,frame,W,H,'river',o);renderRiver.last=render.last;}
