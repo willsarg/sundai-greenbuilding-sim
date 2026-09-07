@@ -10,6 +10,7 @@ const scenes = new WeakMap();
 // River-view layout knobs, set per scene build. k squeezes skyline x toward
 // the centre (display-first framing); S scales landmark size with the tower.
 let LAY={k:1,S:1};
+let BEACONS=[]; // aviation obstruction lights, screen px, filled during buildScene
 const LX=(x)=>.5+(x-.5)*LAY.k, LS=()=>LAY.S, LW=()=>LAY.S*LAY.k;
 const rgba = (r, g, b, a) => `rgba(${r},${g},${b},${a})`;
 const noise = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -118,6 +119,7 @@ function campus(ctx, W, H, horizon, river) {
     ctx.fillStyle=river?'rgba(120,108,92,.35)':'#4a413a';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
     if(river&&h>.09) { // rooftop mechanical penthouse on the tall Kendall blocks
       ctx.fillStyle='#2e2a27';ctx.fillRect(bx+bw*.3,by-H*.012,bw*.4,H*.012);
+      if(h>.2) BEACONS.push([bx+bw*.5,by-H*.014,Math.max(1.5,H/600)]);
     }
     const spacing=Math.max(5, H*(river?.009:.016));
     for(let yy=by+spacing; yy<horizon-spacing; yy+=spacing*1.65) {
@@ -427,12 +429,13 @@ function tower(ctx, corners, sideQuad, W, H) {
   }
   const mast=p(.62,0);
   line(ctx,[mast,[mast[0],mast[1]-rad*2]],'#899490',unit*1.1);
-  glow(ctx,mast[0],mast[1]-rad*2,unit*6,'255,88,65',.25);
-  ctx.fillStyle='#ffc0a0';ctx.fillRect(mast[0]-unit*.8,mast[1]-rad*2,unit*1.6,unit*1.6);
+  ctx.fillStyle='#5a3a34';ctx.fillRect(mast[0]-unit*.8,mast[1]-rad*2,unit*1.6,unit*1.6);
+  BEACONS.push([mast[0],mast[1]-rad*2,Math.max(2,unit*2.2)]);
   return windows;
 }
 
 function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
+  BEACONS=[];
   const river=mode==='river', close=mode==='close';
   const background=surface(ctx,W,H), structure=surface(ctx,W,H), live=surface(ctx,W,H);
   const bg=background.getContext('2d'), building=structure.getContext('2d');
@@ -508,7 +511,7 @@ function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
   const windows=tower(building,corners,sideQuad,W,H);
   if(river)riverShore(building,W,H,horizon,realistic);
   LAY={k:1,S:1};
-  return {W,H,mode,realistic,fit,background,structure,live,windows,horizon,corners,
+  return {W,H,mode,realistic,fit,background,structure,live,windows,horizon,corners,beacons:BEACONS,
     reflection: river ? surface(ctx,W,H) : null};
 }
 
@@ -551,7 +554,7 @@ function render(ctx, frame, W, H, mode, opts={}) {
     scene=buildScene(ctx,W,H,mode,realistic,fit);scenes.set(ctx,scene);rebuilt=true;
   }
   if(typeof window!=='undefined')window.__gbRender={mode,realistic,rebuilt,W,H,sceneMode:scene.mode,n:((window.__gbRender||{}).n||0)+1};
-  render.last={horizon:scene.horizon/H, water:mode==='river'};
+  render.last={horizon:scene.horizon/H, water:mode==='river', beacons:scene.beacons.map(([x,y,r])=>[x/W,1-y/H,r])};
   const {background,structure,live,windows,horizon}=scene;
   const lctx=live.getContext('2d');
   lctx.clearRect(0,0,W,H);lctx.drawImage(structure,0,0);

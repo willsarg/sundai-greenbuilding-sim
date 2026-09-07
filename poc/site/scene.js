@@ -22,12 +22,15 @@ const AtmosphereShader = {
     horizon: { value: 0.32 },   // uv.y of the waterline (0 = bottom)
     water: { value: 0 },        // 1 in the river view
     resolution: { value: new THREE.Vector2(1, 1) },
+    beacons: { value: [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()] },
+    nBeacons: { value: 0 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse; uniform float time, horizon, water; uniform vec2 resolution;
+    uniform vec3 beacons[4]; uniform int nBeacons;
     varying vec2 vUv;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     void main() {
@@ -55,18 +58,17 @@ const AtmosphereShader = {
       col = mix(col, vec3(0.42, 0.33, 0.27), h);
       // Water reflections are a touch darker and cooler than what they mirror.
       if (water > 0.5 && depth > 0.0) col *= vec3(0.86, 0.88, 0.92);
-      // A plane on the Logan approach crawls across above the skyline: white
-      // nav light plus a red beacon blinking once a second. One every ~90 s.
-      {
-        float period = 90.0, t = mod(time, period), tt = t / 22.0;   // 22 s crossing
-        if (tt < 1.0) {
-          vec2 p = vec2(mix(-0.05, 1.05, tt), horizon + 0.10 + tt * 0.06);
-          vec2 dp = (vUv - p) * vec2(resolution.x / resolution.y, 1.0);
-          float d = length(dp) * resolution.y;
-          float white = exp(-d * d / 2.0) * 0.8;
-          float red = exp(-d * d / 6.0) * step(0.82, fract(time)) * 0.9;
-          col += vec3(white) + vec3(red, red * 0.15, red * 0.1);
-        }
+      // Aviation obstruction beacons: slow red flash (about 40 per minute)
+      // with a soft halo, on the tower mast and the tall Kendall blocks.
+      for (int i = 0; i < 4; i++) {
+        if (i >= nBeacons) break;
+        vec3 b = beacons[i];
+        vec2 dp = (vUv - b.xy) * vec2(resolution.x, resolution.y);
+        float d = length(dp) / max(b.z, 1.0);
+        float phase = fract(time / 1.5 + float(i) * 0.37);
+        float on = smoothstep(0.0, 0.08, phase) * (1.0 - smoothstep(0.30, 0.45, phase));
+        float core = exp(-d * d * 1.2), halo = exp(-d * 0.35) * 0.18;
+        col += (core * 1.4 + halo) * on * vec3(1.0, 0.22, 0.12);
       }
       // Film grain, animated, kept light and weighted toward the midtones so
       // shadows and the water stay clean.
@@ -141,6 +143,9 @@ export function createPresenter(target) {
       const last = painters[view].last || {};
       atmosphere.uniforms.horizon.value = 1 - (last.horizon ?? 0.68);
       atmosphere.uniforms.water.value = last.water ? 1 : 0;
+      const bs = last.beacons || [];
+      atmosphere.uniforms.nBeacons.value = Math.min(4, bs.length);
+      bs.slice(0, 4).forEach((b, i) => atmosphere.uniforms.beacons.value[i].set(b[0], b[1], b[2]));
       texture.needsUpdate = true;
       this.tick();
     },
