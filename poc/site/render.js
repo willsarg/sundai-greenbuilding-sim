@@ -282,12 +282,25 @@ function mediaLab(ctx, W, H, horizon) {
 }
 const glow_=glow;
 
-function tree(ctx, x, y, size, seed) {
-  line(ctx,[[x,y],[x-size*.04,y-size*.64]],'#15110e',size*.045);
-  for(let i=0;i<28;i++) {
-    const dx=(noise(seed+i)-.5)*size, dy=noise(seed+i+50)*size*.58;
-    ctx.fillStyle=i%3?'#161512':'#1f1b16';
-    ctx.beginPath();ctx.ellipse(x+dx,y-size*.38-dy,size*(.12+noise(i+seed)*.11),size*.13,0,0,Math.PI*2);ctx.fill();
+function tree(ctx, x, y, size, seed, lit=0) {
+  // A night tree: tapered trunk, a few limbs, and a canopy built from many
+  // small translucent leaf clusters so it reads as foliage, not a black blob.
+  // `lit` (+1 / -1) is the side the nearest lamp light falls on.
+  const top=y-size*.62;
+  polygon(ctx,[[x-size*.028,y],[x+size*.028,y],[x+size*.012,top],[x-size*.012,top]],'#1a140f');
+  for(const [dx,dy,len,ang] of [[0,.40,.26,-.9],[0,.48,.22,.8],[0,.56,.18,-.4]]) {
+    const bx=x+dx*size, by=y-dy*size;
+    line(ctx,[[bx,by],[bx+Math.sin(ang)*size*len,by-Math.cos(ang)*size*len]],'#1a140f',Math.max(1,size*.014));
+  }
+  for(let i=0;i<64;i++) {
+    const a=noise(seed+i*7)*Math.PI*2, rr=Math.sqrt(noise(seed+i*11+3));
+    const cx=x+Math.cos(a)*rr*size*.46, cy=y-size*.62-Math.sin(a)*rr*size*.30-size*.05;
+    const r=size*(.06+noise(seed+i*5)*.07);
+    const side=(cx-x)/(size*.46);                       // -1..1 across the canopy
+    const k=Math.max(0,side*lit)*.5+Math.max(0,-(cy-(y-size*.62))/(size*.35))*.15;
+    const g=Math.round(26+k*40), r0=Math.round(22+k*34), b=Math.round(18+k*18);
+    ctx.fillStyle=`rgba(${r0},${g},${b},${.55+noise(seed+i)*.35})`;
+    ctx.beginPath();ctx.ellipse(cx,cy,r*1.25,r,a*.3,0,Math.PI*2);ctx.fill();
   }
 }
 function lamp(ctx, x, y, h) {
@@ -502,8 +515,8 @@ function buildScene(ctx, W, H, mode, realistic=false, fit=false) {
       lawn.addColorStop(inner,'rgba(40,52,30,0)');lawn.addColorStop(1-inner,'rgba(40,52,30,.5)');
       bg.fillStyle=lawn;bg.fillRect(x0,horizon+H*.02,x1-x0,H);
     }
-    tree(bg,W*.10,horizon+H*.015,Math.min(H*.27,W*.27),11);
-    tree(bg,W*.86,horizon+H*.018,Math.min(H*.23,W*.26),56);
+    tree(bg,W*.10,horizon+H*.015,Math.min(H*.27,W*.27),11,+1);
+    tree(bg,W*.86,horizon+H*.018,Math.min(H*.23,W*.26),56,-1);
     lamp(bg,x-bw*.14,horizon+H*.025,H*.085);
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }

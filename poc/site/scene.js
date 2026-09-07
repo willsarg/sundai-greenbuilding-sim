@@ -49,7 +49,7 @@ const AtmosphereShader = {
       }
       // Chromatic fringing grows toward the frame edges.
       vec2 d = (uv - 0.5); float r2 = dot(d, d);
-      vec2 ca = d * r2 * 0.012;
+      vec2 ca = d * r2 * 0.004;
       vec3 col = vec3(texture2D(tDiffuse, uv + ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - ca).b);
       // Haze: only above the waterline, thickest just over the far bank and
       // thinning with height. The water itself stays clear.
