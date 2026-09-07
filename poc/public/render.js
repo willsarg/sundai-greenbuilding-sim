@@ -1,5 +1,7 @@
 // Architectural illustration of MIT Building 54, not a surveyed model.
 // Facade reference: https://hacks.mit.edu/by_year/2012/tetris/tetris1_img6080.jpg
+// River composition reference: https://www.gettyimages.com/detail/photo/2170429289
+// Photos are references only; all scene artwork is drawn procedurally.
 // 2026 installation context: https://www.anhadsawhney.com/green-building-tetris
 // The historical photo informs architecture only. All 153 display windows below
 // are driven solely by the incoming 2026 17x9, top-to-bottom RGB frame.
@@ -74,11 +76,11 @@ function sky(ctx, W, H, horizon) {
 
 function campus(ctx, W, H, horizon, river) {
   const buildings = river
-    ? [[-.02,.22,.09],[.16,.16,.065],[.30,.14,.075],[.61,.17,.105],[.79,.23,.08]]
+    ? [[-.02,.19,.08],[.17,.18,.105],[.35,.15,.115],[.50,.20,.09],[.76,.12,.13],[.88,.14,.16]]
     : [[-.03,.28,.23],[.23,.14,.12],[.74,.30,.18]];
   for (const [x,w,h] of buildings) {
     const bx=x*W, by=horizon-h*H, bw=w*W, bh=h*H;
-    ctx.fillStyle=river?'#17202a':'#232b30'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=river?(x>.75?'#343036':'#3e4244'):'#232b30'; ctx.fillRect(bx,by,bw,bh);
     ctx.fillStyle='#3b4246';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
     const spacing=Math.max(5, H*(river?.009:.016));
     for(let yy=by+spacing; yy<horizon-spacing; yy+=spacing*1.65) {
@@ -91,11 +93,25 @@ function campus(ctx, W, H, horizon, river) {
     }
   }
   if(river) {
-    // Low classical campus massing, kept subordinate to the display tower.
-    const x=W*.24,y=horizon-H*.067,r=H*.027;
-    ctx.fillStyle='#303940';ctx.fillRect(x-r*1.7,y,r*3.4,H*.067);
-    ctx.beginPath();ctx.ellipse(x,y,r*1.25,r,0,Math.PI,0);ctx.fill();
-    for(let i=-3;i<=3;i++)ctx.fillRect(x+i*r*.39,y+r*.28,r*.12,r*1.45);
+    // Great Dome at the left of the river panorama, above the lower campus.
+    const x=W*.225,y=horizon-H*.113,r=Math.min(H*.044,W*.055);
+    ctx.fillStyle='#555950';ctx.fillRect(x-r*1.7,y,r*3.4,H*.113);
+    ctx.fillStyle='#858578';ctx.fillRect(x-r*1.9,y-r*.05,r*3.8,r*.12);
+    const dome=ctx.createLinearGradient(0,y-r,0,y);
+    dome.addColorStop(0,'#92958b');dome.addColorStop(1,'#525d60');
+    ctx.beginPath();ctx.ellipse(x,y,r*1.4,r*.80,0,Math.PI,0);
+    ctx.fillStyle=dome;ctx.fill();
+    for(let i=0;i<3;i++)line(ctx,[[x-r*1.32,y-r*(.09+i*.15)],[x+r*1.32,y-r*(.09+i*.15)]],'rgba(30,43,49,.22)',Math.max(.6,H/1000));
+    for(let i=-4;i<=4;i++) {
+      ctx.fillStyle='#888a7d';ctx.fillRect(x+i*r*.33,y+r*.18,r*.12,r*.65);
+      ctx.fillStyle='#232f35';ctx.fillRect(x+i*r*.33+r*.13,y+r*.2,r*.15,r*.62);
+    }
+    // Rooftop utility blocks and the narrow chimney break up the roofline.
+    ctx.fillStyle='#62625a';ctx.fillRect(W*.33,horizon-H*.14,W*.009,H*.05);
+    for(let i=0;i<13;i++) {
+      const x=W*(.36+i*.027),y=horizon-H*(.112+noise(i+15)*.013);
+      ctx.fillStyle='#4c5559';ctx.fillRect(x,y,W*.009,H*.018);
+    }
   }
 }
 
@@ -117,6 +133,32 @@ function lamp(ctx, x, y, h) {
     ctx.fillStyle='#fff1d1';ctx.beginPath();ctx.ellipse(x+dx*s,cy,2.4*s,3.3*s,0,0,Math.PI*2);ctx.fill();
   }
   glow(ctx,x,y,38*s,'223,174,108',.08);
+}
+
+function riverShore(ctx, W, H, horizon) {
+  // A continuous canopy, with a retaining wall and sailing pavilion at the water.
+  for(let i=0;i<75;i++) {
+    const x=W*i/74, h=H*(.037+noise(i+810)*.025);
+    tree(ctx,x,horizon-H*.006,h,900+i*31);
+  }
+  ctx.fillStyle='#4c5553';ctx.fillRect(0,horizon-H*.010,W,H*.010);
+  line(ctx,[[0,horizon-H*.011],[W,horizon-H*.011]],'#788078',Math.max(.8,H/850));
+  const px=W*.39, py=horizon-H*.013, pw=Math.min(W*.085,H*.14), ph=H*.025;
+  ctx.fillStyle='#7c8178';ctx.fillRect(px,py-ph,pw,ph);
+  polygon(ctx,[[px-pw*.08,py-ph],[px+pw*.18,py-ph*1.6],[px+pw*.39,py-ph],
+    [px+pw*.65,py-ph*1.6],[px+pw*1.08,py-ph]],'#b1b1a0');
+  for(let i=0;i<5;i++) {
+    ctx.fillStyle=i%2?'#2b3d45':'#af9f7b';
+    ctx.fillRect(px+pw*(.08+i*.18),py-ph*.75,pw*.10,ph*.62);
+  }
+  line(ctx,[[px-pw*.4,py+H*.005],[px+pw*1.3,py+H*.005]],'#8b8979',Math.max(1,H*.002));
+  // Small dockside masts and furled boats, subordinate to the live display.
+  for(let i=0;i<20;i++) {
+    const x=W*(.08+i*.014),h=H*(.017+noise(i+9)*.012);
+    line(ctx,[[x,horizon],[x,horizon-h]],'#7b8582',Math.max(.5,W/2200));
+    polygon(ctx,[[x,horizon-h*.7],[x+W*.003,horizon-H*.004],[x-W*.002,horizon-H*.004]],
+      i%3?'#957569':'#aaa898');
+  }
 }
 
 function tower(ctx, corners, sideWidth, W, H) {
@@ -201,7 +243,7 @@ function buildScene(ctx, W, H, mode) {
   sky(bg,W,H,horizon);campus(bg,W,H,horizon,river);
   let corners,sideWidth;
   if(river) {
-    const bh=Math.min(H*.48,W*.95),bw=bh*.40,x=W*.52-bw/2,y=horizon-bh;
+    const bh=Math.min(H*.43,W*.95),bw=bh*.40,x=W*.50-bw/2,y=horizon-bh;
     corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
     sideWidth=0;
     const water=bg.createLinearGradient(0,horizon,0,H);
@@ -236,6 +278,7 @@ function buildScene(ctx, W, H, mode) {
     lamp(bg,x+bw*1.24,horizon+H*.025,H*.085);
   }
   const windows=tower(building,corners,sideWidth,W,H);
+  if(river)riverShore(building,W,H,horizon);
   return {W,H,mode,background,structure,live,windows,horizon,corners,
     reflection: river ? surface(ctx,W,H) : null};
 }
