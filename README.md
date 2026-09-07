@@ -17,6 +17,13 @@ You get back a name like `brave-otter`, plus a `send_url` and a `view_url`. Open
 
 ## Two ways to drive it
 
+**Compatibility rule.** The real building's display interface is exactly two methods,
+`makeframe()` and `send(frame)`, plus `Frame` and `Color` (`poc/python/gbsim/display.py` is a
+verbatim copy of the upstream file). Game code that only uses those runs unchanged on the real
+building. Everything else in `gbsim` is simulator-only: `upload_clip`, `clear_clip`, and
+`WebDisplay.flush()` / `close()` / `with`. Keep those out of your game code; put clip uploads in
+a separate script.
+
 ### Live — your code streams frames
 
 Best for interactive things (a playable game). Your program runs the whole time.
@@ -38,10 +45,11 @@ kill one. Each instance accepts at most 40 frames per second in total.
 Best for pre-rendered animations. Upload, close your laptop, the building keeps playing.
 
 ```python
-frames = [d.makeframe() for _ in range(90)]  # 1..900 frames
+from gbsim import Frame, upload_clip, clear_clip   # simulator-only helpers
+frames = [Frame() for _ in range(180)]             # 1..900 frames
 # ...draw into each frame...
-d.upload_clip(frames, fps=30)                # fps 1..30
-d.clear_clip()                               # remove it
+upload_clip("brave-otter", frames, fps=30)         # fps 1..30
+clear_clip("brave-otter")                          # remove it
 ```
 
 The clip wraps straight from the last frame to the first, so make its length a whole number

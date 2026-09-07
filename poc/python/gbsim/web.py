@@ -6,6 +6,8 @@ import weakref
 from urllib.parse import urlsplit
 from .display import Display, Frame
 
+DEFAULT_BASE_URL = "https://sundai.willsarg.com/api"
+
 _UA_HEADERS = {
     "Content-Type": "application/octet-stream",
     # Cloudflare's edge blocks the default "Python-urllib" UA (error 1010).
@@ -50,8 +52,9 @@ class _Sender:
     def close(self, timeout):
         """Stop accepting frames, deliver what is queued, then stop the thread.
 
-        Returns True if the thread has exited. If a request is wedged longer than
-        `timeout`, the connection is torn down from here to unblock it.
+        Returns True if the thread has exited. The pump always sends a still-queued frame
+        before exiting, so a frame accepted before close() is only lost if its request
+        cannot complete within roughly two timeouts; a wedged request is torn down.
         """
         with self._cv:
             self._closing = True      # from here on put() refuses: nothing can sneak in
@@ -86,8 +89,8 @@ class _Sender:
             with self._cv:
                 while self._slot is None and not self._stopped:
                     self._cv.wait()
-                if self._stopped:
-                    break
+                if self._slot is None:        # stopped and nothing left: exit. A queued frame is
+                    break                     # always sent first, even after the stop deadline.
                 buf, self._slot = self._slot, None
                 self._busy = True
             try:
@@ -123,10 +126,11 @@ class WebDisplay(Display):
     work. Call flush() to wait for it explicitly, close() (or use `with`) when done.
     """
 
-    def __init__(self, name, base_url="https://sundai.willsarg.com/api", timeout=2.0):
+    def __init__(self, name, base_url=DEFAULT_BASE_URL, timeout=2.0):
+        if not isinstance(timeout, (int, float)) or isinstance(timeout, bool) or not timeout > 0:
+            raise ValueError("timeout must be a positive number of seconds (None/blocking is not supported)")
         u = urlsplit(base_url.rstrip("/"))
         self._host, self._https = u.netloc, u.scheme == "https"
-        self._clip_path = f"{u.path}/i/{name}/clip"
         self._timeout = timeout
         self._sender = _Sender(self._host, self._https, f"{u.path}/i/{name}/frame", timeout)
         # Stop the pump if the display is garbage-collected without close(); the finalizer
@@ -155,48 +159,62 @@ class WebDisplay(Display):
     def __exit__(self, *exc):
         self.close()
 
-    def upload_clip(self, frames, fps=10):
-        """Upload an animation the display loops on its own (no live connection needed).
-
-        frames: list of Frame (1..900); fps: 1..30. Blocks until the server answers and
-        returns True on success. Live send() frames take over while they arrive; the clip
-        resumes ~2 s after the last one. clear_clip() removes it.
-        """
-        if not 1 <= fps <= 30:
-            raise ValueError("fps must be 1..30")
-        if not 1 <= len(frames) <= 900:
-            raise ValueError("clip must have 1..900 frames")
-        buf = bytearray((0x43, int(fps), len(frames) & 0xFF, len(frames) >> 8))
-        for frame in frames:
-            buf += self._pack(frame)
-        return self._blocking("POST", self._clip_path, bytes(buf))
-
-    def clear_clip(self):
-        return self._blocking("DELETE", self._clip_path, None)
-
     @staticmethod
     def _pack(frame):
-        buf = bytearray()
-        for i in range(frame.nrows()):
-            for color in frame.row(i):
-                buf += bytes((color.r, color.g, color.b))
-        return bytes(buf)
+        return _pack(frame)
 
-    def _blocking(self, method, path, body):
-        try:
-            cls = http.client.HTTPSConnection if self._https else http.client.HTTPConnection
-            c = cls(self._host, timeout=self._timeout)
-            c.request(method, path, body=body, headers=_UA_HEADERS)
-            resp = c.getresponse()
-            data = resp.read()
-            c.close()
-            if resp.status >= 400:
-                print(f"gbsim: {method} clip failed: HTTP {resp.status} {data[:200].decode(errors='replace')}")
-                return False
-            return True
-        except Exception as e:
-            print(f"gbsim: {method} clip failed: {e}")
+
+# --- simulator-only helpers: NOT part of the real building's Display interface -------------
+# Keep these out of game code you intend to run on the real display; put clip uploads in a
+# separate script. The real building only has Display.makeframe() and Display.send().
+
+
+
+def upload_clip(name, frames, fps=30, base_url=DEFAULT_BASE_URL, timeout=10.0):
+    """Upload an animation that the simulator instance loops on its own.
+
+    frames: list of Frame (1..900); fps: 1..30. Returns True on success. Live send() frames
+    take over while they arrive; the clip resumes ~2 s after the last one.
+    """
+    if not 1 <= fps <= 30:
+        raise ValueError("fps must be 1..30")
+    if not 1 <= len(frames) <= 900:
+        raise ValueError("clip must have 1..900 frames")
+    buf = bytearray((0x43, int(fps), len(frames) & 0xFF, len(frames) >> 8))
+    for frame in frames:
+        buf += _pack(frame)
+    return _blocking("POST", name, bytes(buf), base_url, timeout)
+
+
+def clear_clip(name, base_url=DEFAULT_BASE_URL, timeout=10.0):
+    """Remove the instance's clip. Returns True on success."""
+    return _blocking("DELETE", name, None, base_url, timeout)
+
+
+def _pack(frame):
+    buf = bytearray()
+    for i in range(frame.nrows()):
+        for color in frame.row(i):
+            buf += bytes((color.r, color.g, color.b))
+    return bytes(buf)
+
+
+def _blocking(method, name, body, base_url, timeout):
+    u = urlsplit(base_url.rstrip("/"))
+    try:
+        cls = http.client.HTTPSConnection if u.scheme == "https" else http.client.HTTPConnection
+        c = cls(u.netloc, timeout=timeout)
+        c.request(method, f"{u.path}/i/{name}/clip", body=body, headers=_UA_HEADERS)
+        resp = c.getresponse()
+        data = resp.read()
+        c.close()
+        if resp.status >= 400:
+            print(f"gbsim: {method} clip failed: HTTP {resp.status} {data[:200].decode(errors='replace')}")
             return False
+        return True
+    except Exception as e:
+        print(f"gbsim: {method} clip failed: {e}")
+        return False
 
 
 def _flush_at_exit(ref):
