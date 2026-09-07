@@ -12,7 +12,7 @@ const NAME_RE = /^[a-z]+-[a-z]+$/;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 const json = (obj, status = 200) =>

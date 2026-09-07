@@ -6,6 +6,9 @@ export const ROWS = 17, COLS = 9, BYTES = ROWS * COLS * 3; // 459
 const TICK_MS = 33;
 const SAVE_MS = 3000;        // persist the frame at most this often (it only exists to survive a restart)
 const MAX_POSTS_PER_S = 40;  // per instance; above this the sender gets 429 (protects the account budget)
+const MAX_CLIP_FRAMES = 900; // 30 s at 30 fps (~400 KB binary)
+const CLIP_MAGIC = 0x43;     // 'C' — clip message header: [magic, fps, countLo, countHi] + frames
+const LIVE_GRACE_MS = 2000;  // a live frame this recent is sent to a new viewer even when a clip exists
 
 const CORS = { "Access-Control-Allow-Origin": "*" };
 const json = (obj, status = 200) =>
@@ -32,6 +35,38 @@ export function parseJsonFrame(v) {
   return out;
 }
 
+// Build the wire message for a clip. `frames` is an array of Uint8Array(459).
+export function packClip(fps, frames) {
+  const out = new Uint8Array(4 + frames.length * BYTES);
+  out[0] = CLIP_MAGIC; out[1] = fps; out[2] = frames.length & 0xff; out[3] = frames.length >> 8;
+  frames.forEach((f, i) => out.set(f, 4 + i * BYTES));
+  return out;
+}
+const EMPTY_CLIP = packClip(0, []);
+
+// Validate an incoming clip (JSON or binary) -> packed message, or throws.
+export async function parseClip(req) {
+  const ct = req.headers.get("content-type") || "";
+  let fps, frames;
+  if (ct.startsWith("application/octet-stream")) {
+    const buf = new Uint8Array(await req.arrayBuffer());
+    if (buf.length < 4 || buf[0] !== CLIP_MAGIC) throw new Error("bad clip header");
+    fps = buf[1];
+    const n = buf[2] | (buf[3] << 8);
+    if (buf.length !== 4 + n * BYTES) throw new Error(`expected ${4 + n * BYTES} bytes for ${n} frames, got ${buf.length}`);
+    if (n > MAX_CLIP_FRAMES) throw new Error(`max ${MAX_CLIP_FRAMES} frames`);
+    if (!(fps >= 1 && fps <= 30)) throw new Error("fps must be 1..30");
+    return buf;
+  }
+  const v = await req.json();
+  fps = v.fps;
+  if (!Number.isInteger(fps) || fps < 1 || fps > 30) throw new Error("fps must be an integer 1..30");
+  if (!Array.isArray(v.frames) || v.frames.length < 1) throw new Error("frames must be a non-empty array");
+  if (v.frames.length > MAX_CLIP_FRAMES) throw new Error(`max ${MAX_CLIP_FRAMES} frames`);
+  frames = v.frames.map((f, i) => { try { return parseJsonFrame(f); } catch (e) { throw new Error(`frame ${i}: ${e.message}`); } });
+  return packClip(fps, frames);
+}
+
 export class Instance extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -46,10 +81,12 @@ export class Instance extends DurableObject {
     this.win = 0;                              // POSTs in the current 1 s window
     this.winStart = 0;
     this.used = false;                         // claimed via POST /claim or has received a frame (persisted)
+    this.clip = null;                          // packed clip message (Uint8Array) or null; viewers loop it locally
     ctx.blockConcurrencyWhile(async () => {
-      const [saved, used] = await Promise.all([ctx.storage.get("frame"), ctx.storage.get("used")]);
+      const [saved, used, clip] = await Promise.all([ctx.storage.get("frame"), ctx.storage.get("used"), ctx.storage.get("clip")]);
       if (saved) this.frame = new Uint8Array(saved);
-      this.used = !!(used || saved);
+      if (clip) this.clip = new Uint8Array(clip);
+      this.used = !!(used || saved || clip);
     });
   }
 
@@ -91,6 +128,20 @@ export class Instance extends DurableObject {
     return true;
   }
 
+  setClip(packed) {
+    this.clip = packed;
+    this.markUsed();
+    if (packed) this.ctx.storage.put("clip", packed.buffer.slice(0)); else this.ctx.storage.delete("clip");
+    for (const ws of this.ctx.getWebSockets()) {
+      try { ws.send(packed || EMPTY_CLIP); } catch {}
+    }
+  }
+
+  clipInfo() {
+    if (!this.clip) return null;
+    return { fps: this.clip[1], frames: this.clip[2] | (this.clip[3] << 8) };
+  }
+
   overLimit() {
     const now = Date.now();
     if (now - this.winStart >= 1000) { this.winStart = now; this.win = 0; }
@@ -124,6 +175,19 @@ export class Instance extends DurableObject {
       return new Response(null, { status: 204, headers: CORS });
     }
 
+    if (sub === "/clip" && req.method === "POST") {
+      if (this.overLimit()) return json({ error: `rate limit: max ${MAX_POSTS_PER_S} requests/s` }, 429);
+      let packed;
+      try { packed = await parseClip(req); } catch (e) { return json({ error: e.message }, 400); }
+      this.setClip(packed);
+      return json({ ok: true, clip: this.clipInfo() }, 201);
+    }
+
+    if (sub === "/clip" && req.method === "DELETE") {
+      this.setClip(null);
+      return new Response(null, { status: 204, headers: CORS });
+    }
+
     if (sub === "/frame" && req.method === "GET") {
       const rows = [];
       for (let r = 0; r < ROWS; r++) {
@@ -140,14 +204,17 @@ export class Instance extends DurableObject {
     if (sub === "/" && req.method === "GET") {
       return json({
         created_at: this.created, last_frame_at: this.lastAt,
-        viewers: this.ctx.getWebSockets().length, frames: this.frames, used: this.used,
+        viewers: this.ctx.getWebSockets().length, frames: this.frames, used: this.used, clip: this.clipInfo(),
       });
     }
 
     if (sub === "/view" && req.headers.get("Upgrade") === "websocket") {
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1]);   // hibernatable; survives idle
-      pair[1].send(this.frame);            // fill the slot immediately
+      // Fill the viewer immediately: the clip if there is one, and the last live frame
+      // unless a clip exists and the live sender has gone quiet.
+      if (this.clip) pair[1].send(this.clip);
+      if (!this.clip || (this.lastAt && Date.now() - this.lastAt < LIVE_GRACE_MS)) pair[1].send(this.frame);
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
 
