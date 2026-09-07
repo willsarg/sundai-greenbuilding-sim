@@ -59,7 +59,7 @@ const AtmosphereShader = {
       float above = max(0.0, uv.y - horizon);
       float ramp = smoothstep(0.0, 0.05, above);
       float h = ramp * (exp(-above * 10.0) * 0.10 + above * 0.03) * (water > 0.5 ? 1.0 : 0.35);
-      col = mix(col, vec3(0.42, 0.33, 0.27), h);
+      col = mix(col, vec3(0.26, 0.20, 0.17), h);   // darker haze tone: fog dims, it doesn't glow
       // Water reflections are a touch darker and cooler than what they mirror.
       if (water > 0.5 && depth > 0.0) col *= vec3(0.86, 0.88, 0.92);
       // Aviation obstruction beacons: slow red flash (about 40 per minute)
