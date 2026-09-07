@@ -45,32 +45,31 @@ function elevation(corners) {
 const rect = (p, u, v, w, h) => [p(u,v), p(u+w,v), p(u+w,v+h), p(u,v+h)];
 
 function sky(ctx, W, H, horizon) {
+  // Cambridge at night is light-polluted: a warm brown-grey haze, not a
+  // deep blue star field (see the 2012 reference photo). Stars barely show.
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#080f20'); g.addColorStop(.48, '#1c2a3e');
-  g.addColorStop(.82, '#41424a'); g.addColorStop(1, '#69605a');
+  g.addColorStop(0, '#141419'); g.addColorStop(.35, '#26242a');
+  g.addColorStop(.70, '#4a4038'); g.addColorStop(.92, '#6b5646'); g.addColorStop(1, '#7a6350');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  glow(ctx, W*.76, horizon, W*.65, '192,139,88', .13);
-  // Long, faint cloud banks rather than a uniformly star-filled sky.
-  for (let i=0; i<18; i++) {
-    ctx.save(); ctx.translate(W*noise(i+2), H*(.08+noise(i+19)*.55));
-    ctx.scale(5, .35);
-    glow(ctx, 0, 0, W*(.06+noise(i+4)*.08), '124,145,164', .022);
+  // Sodium/LED skyglow pooling over the city at the horizon.
+  glow(ctx, W*.55, horizon*1.02, W*.9, '214,150,96', .16);
+  glow(ctx, W*.85, horizon, W*.5, '226,170,110', .10);
+  glow(ctx, W*.15, horizon, W*.45, '170,140,120', .07);
+  // Low, ragged cloud banks catching the city light from below.
+  for (let i=0; i<26; i++) {
+    const y = H*(.05+noise(i+19)*.62), lit = y/horizon;
+    ctx.save(); ctx.translate(W*noise(i+2), y);
+    ctx.scale(4+noise(i+7)*4, .28+noise(i+9)*.2);
+    glow(ctx, 0, 0, W*(.05+noise(i+4)*.09), lit>.6?'150,118,96':'96,92,98', .05+lit*.05);
     ctx.restore();
   }
-  // A fixed star field: resizing is stable and incoming frames never make it flicker.
+  // A sparse, dim star field survives only high in the sky.
   const starScale = Math.max(.8, Math.min(W, H) / 750);
-  for (let i=0; i<210; i++) {
-    const x=noise(i+70)*W, y=noise(i+140)*horizon*.90;
-    const bright=noise(i+44), fade=1-.65*(y/horizon)**2;
-    const radius=(bright>.94?1.45:bright>.65?.85:.48)*starScale;
-    const tint=i%7===0?'255,225,185':'207,225,255';
-    if(bright>.94)glow(ctx,x,y,6*starScale,tint,.20*fade);
-    ctx.fillStyle=`rgba(${tint},${(.30+bright*.65)*fade})`;
-    ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
-    if(bright>.985) {
-      line(ctx,[[x-3*starScale,y],[x+3*starScale,y]],`rgba(${tint},${.22*fade})`,starScale*.6);
-      line(ctx,[[x,y-3*starScale],[x,y+3*starScale]],`rgba(${tint},${.22*fade})`,starScale*.6);
-    }
+  for (let i=0; i<70; i++) {
+    const x=noise(i+70)*W, y=noise(i+140)*horizon*.55;
+    const bright=noise(i+44), fade=(1-(y/(horizon*.55))**1.5)*.55;
+    ctx.fillStyle=`rgba(225,228,238,${(.15+bright*.45)*fade})`;
+    ctx.beginPath();ctx.arc(x,y,(bright>.9?1.1:.6)*starScale,0,Math.PI*2);ctx.fill();
   }
 }
 
@@ -80,14 +79,14 @@ function campus(ctx, W, H, horizon, river) {
     : [[-.03,.28,.23],[.23,.14,.12],[.74,.30,.18]];
   for (const [x,w,h] of buildings) {
     const bx=x*W, by=horizon-h*H, bw=w*W, bh=h*H;
-    ctx.fillStyle=river?(x>.75?'#343036':'#3e4244'):'#232b30'; ctx.fillRect(bx,by,bw,bh);
-    ctx.fillStyle='#3b4246';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
+    ctx.fillStyle=river?(x>.75?'#3a3231':'#433c38'):'#2a2521'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#4a413a';ctx.fillRect(bx,by,bw,Math.max(1,H*.003));
     const spacing=Math.max(5, H*(river?.009:.016));
     for(let yy=by+spacing; yy<horizon-spacing; yy+=spacing*1.65) {
-      line(ctx,[[bx,yy+spacing],[bx+bw,yy+spacing]],'#111c24',Math.max(1,spacing*.22));
+      line(ctx,[[bx,yy+spacing],[bx+bw,yy+spacing]],'#1a1613',Math.max(1,spacing*.22));
       for(let xx=bx+spacing;xx<bx+bw-spacing;xx+=spacing*1.1) {
         const n=noise(xx+yy);
-        ctx.fillStyle=n>.73?`rgba(228,193,137,${.12+n*.32})`:'#121e27';
+        ctx.fillStyle=n>.73?`rgba(255,214,150,${.18+n*.40})`:'#1c1a1a';
         ctx.fillRect(xx,yy,spacing*.53,spacing*.72);
       }
     }
@@ -171,10 +170,10 @@ function campus(ctx, W, H, horizon, river) {
 }
 
 function tree(ctx, x, y, size, seed) {
-  line(ctx,[[x,y],[x-size*.04,y-size*.64]],'#111d21',size*.045);
+  line(ctx,[[x,y],[x-size*.04,y-size*.64]],'#15110e',size*.045);
   for(let i=0;i<28;i++) {
     const dx=(noise(seed+i)-.5)*size, dy=noise(seed+i+50)*size*.58;
-    ctx.fillStyle=i%3?'#142225':'#192a2a';
+    ctx.fillStyle=i%3?'#161512':'#1f1b16';
     ctx.beginPath();ctx.ellipse(x+dx,y-size*.38-dy,size*(.12+noise(i+seed)*.11),size*.13,0,0,Math.PI*2);ctx.fill();
   }
 }
@@ -230,47 +229,70 @@ function tower(ctx, corners, sideWidth, W, H) {
     for(let r=0;r<19;r++)polygon(ctx,rect(sp,i/9-.036,.09+r*.041,.047,.026),'#1b282e');
   }
   const concrete=ctx.createLinearGradient(a[0],a[1],c[0],c[1]);
-  concrete.addColorStop(0,'#535753');concrete.addColorStop(.5,'#64645a');concrete.addColorStop(1,'#817563');
-  polygon(ctx,corners,concrete,'#8e8975',unit*.65);
+  // Warm tan concrete, darker at the crown, lifted by plaza and lobby light at the base.
+  concrete.addColorStop(0,'#5a544a');concrete.addColorStop(.55,'#736a5b');concrete.addColorStop(1,'#9a8a72');
+  polygon(ctx,corners,concrete,'#a39a84',unit*.65);
+  // Broad soft shading: the facade catches more skyglow on its upper-right.
+  const shade=ctx.createLinearGradient(a[0],0,b[0],0);
+  shade.addColorStop(0,'rgba(20,16,12,.22)');shade.addColorStop(.5,'rgba(20,16,12,0)');shade.addColorStop(1,'rgba(255,235,200,.05)');
+  polygon(ctx,corners,shade);
   // Stable mineral grain; this is drawn once per view/size, not per frame.
   ctx.save();polygon(ctx,corners);ctx.clip();
   for(let i=0;i<6500;i++) {
     const u=noise(i+3),v=noise(i+6600),[x,y]=p(u,v);
-    ctx.fillStyle=i%2?'rgba(12,19,22,.08)':'rgba(223,213,180,.055)';
+    ctx.fillStyle=i%2?'rgba(24,18,12,.09)':'rgba(236,222,190,.06)';
     ctx.fillRect(x,y,unit*(.5+noise(i)*1.5),unit*.8);
   }
   ctx.restore();
   for(let i=0;i<=10;i++) {
     const u=.064+i*.0872;
-    line(ctx,[p(u,.013),p(u,.895)],'rgba(26,32,32,.28)',unit*.8);
-    line(ctx,[p(u+.006,.015),p(u+.006,.895)],'rgba(211,200,166,.13)',unit*.7);
+    line(ctx,[p(u,.013),p(u,.895)],'rgba(30,24,18,.34)',unit*.9);
+    line(ctx,[p(u+.006,.015),p(u+.006,.895)],'rgba(230,214,178,.16)',unit*.7);
   }
   // Parapet, blank mechanical crown, recessed glazing, concrete sills.
-  polygon(ctx,rect(p,0,0,1,.012),'#929080');
-  polygon(ctx,rect(p,.025,.015,.95,.055),'rgba(34,41,41,.19)');
+  polygon(ctx,rect(p,0,0,1,.012),'#a09a86');
+  // Two rows of dark mechanical louvres under the parapet.
+  polygon(ctx,rect(p,.025,.015,.95,.055),'rgba(28,26,26,.35)');
+  for(let i=0;i<COLS;i++)for(let r=0;r<2;r++)
+    polygon(ctx,rect(p,.075+i*.0962,.020+r*.026,.078,.020),'#25272a');
   const windows=[];
   const colW=.866/COLS,rowH=.755/ROWS;
   for(let r=0;r<ROWS;r++)for(let col=0;col<COLS;col++) {
     const u=.067+col*colW,v=.088+r*rowH;
     const aperture=rect(p,u+.009,v+.004,colW-.020,rowH-.011);
-    polygon(ctx,rect(p,u,v,colW-.002,rowH),'#55574f');
-    polygon(ctx,rect(p,u+.005,v+.001,colW-.010,rowH-.006),'#272f30');
-    polygon(ctx,aperture,'#0c1821');
-    line(ctx,[p(u+.009,v+rowH-.007),p(u+colW-.010,v+rowH-.007)],'#a09174',unit*.9);
-    line(ctx,[p(u+colW-.010,v+.004),p(u+colW-.010,v+rowH-.007)],'#747364',unit*.85);
-    // A cool reflection remains visible in black windows; never invent lit pixels.
-    polygon(ctx,rect(p,u+.012,v+.006,colW-.026,.004),'rgba(100,131,145,.09)');
+    // Recessed bay in the concrete grid, then a pale aluminium frame, then glass.
+    polygon(ctx,rect(p,u,v,colW-.002,rowH),'#5e574c');
+    polygon(ctx,rect(p,u+.004,v+.001,colW-.009,rowH-.006),'#8f877a');
+    polygon(ctx,rect(p,u+.007,v+.003,colW-.016,rowH-.009),'#3a3b3a');
+    // Unlit glass is dark warm grey reflecting the hazy sky, never pure black.
+    const [gx,gy]=p(u+.009,v+.004),[gx2,gy2]=p(u+.009,v+rowH-.007);
+    const glass=ctx.createLinearGradient(gx,gy,gx2,gy2);
+    glass.addColorStop(0,'#2b3037');glass.addColorStop(.5,'#1c2127');glass.addColorStop(1,'#14181d');
+    polygon(ctx,aperture,glass);
+    // Faint skyglow reflection on the upper glass; a central mullion splits each pane.
+    polygon(ctx,rect(p,u+.011,v+.006,colW-.024,.006),'rgba(140,130,125,.16)');
+    line(ctx,[p(u+colW/2-.001,v+.004),p(u+colW/2-.001,v+rowH-.007)],'#6c675d',unit*.9);
+    line(ctx,[p(u+.009,v+rowH-.007),p(u+colW-.010,v+rowH-.007)],'#b0a58c',unit*.9);
     windows.push({points:aperture,index:(r*COLS+col)*3});
   }
   // Open ground-level colonnade, with glazed lobby set back behind the piers.
-  polygon(ctx,rect(p,.07,.90,.86,.10),'#17252b');
+  polygon(ctx,rect(p,.07,.90,.86,.10),'#2a2a26');
+  const [lx,ly]=p(.5,.91),[lx2,ly2]=p(.5,1);
+  const lobby=ctx.createLinearGradient(lx,ly,lx2,ly2);
+  lobby.addColorStop(0,'#c9b48e');lobby.addColorStop(.35,'#f2e3c4');lobby.addColorStop(1,'#d8c39c');
   for(let i=0;i<12;i++) {
     const u=.08+i*.07;
-    polygon(ctx,rect(p,u,.914,.049,.075),i%3?'#394745':'#797968');
-    line(ctx,[p(u,.912),p(u,.99)],'#a69e82',unit*.7);
+    polygon(ctx,rect(p,u,.914,.052,.075),i%4===3?'#6a6558':lobby);
+    line(ctx,[p(u,.912),p(u,.99)],'#8f8770',unit*.8);
+    if(i%4!==3)polygon(ctx,rect(p,u+.004,.925,.044,.03),'rgba(255,255,255,.35)');
   }
-  for(let i=0;i<4;i++)polygon(ctx,rect(p,.02+i*.306,.89,.06,.11),'#746e5d');
-  line(ctx,[p(0,1),p(1,1)],'#a0947a',unit*1.8);
+  for(let i=0;i<4;i++)polygon(ctx,rect(p,.02+i*.306,.89,.06,.11),'#8a8271');
+  line(ctx,[p(0,1),p(1,1)],'#b3a688',unit*1.8);
+  // Lobby light spills onto the plaza and washes the underside of the first floor.
+  const [sx,sy]=p(.5,1);
+  ctx.save();ctx.globalCompositeOperation='screen';
+  glow(ctx,sx,sy,(b[0]-a[0])*.9,'255,220,170',.22);
+  ctx.restore();
   // Rooftop radome with panel seams and a small warning beacon.
   const roof=p(.25,0),rad=(b[0]-a[0])*.083;
   ctx.fillStyle='#343d41';ctx.fillRect(roof[0]-rad*.57,roof[1]-rad*.8,rad*1.14,rad*.9);
@@ -302,11 +324,14 @@ function buildScene(ctx, W, H, mode) {
     corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
     sideWidth=0;
     const water=bg.createLinearGradient(0,horizon,0,H);
-    water.addColorStop(0,'#283844');water.addColorStop(.3,'#142734');water.addColorStop(1,'#0a1826');
+    // The Charles at night mirrors the warm haze near the far bank and goes
+    // near-black toward the viewer's shore.
+    water.addColorStop(0,'#4a3f38');water.addColorStop(.25,'#26231f');water.addColorStop(1,'#0b0c0e');
     bg.fillStyle=water;bg.fillRect(0,horizon,W,H-horizon);
     for(let i=0;i<1600;i++) {
       const y=horizon+noise(i+10)*(H-horizon),x=noise(i+800)*W;
-      bg.fillStyle=`rgba(133,155,165,${.025+noise(i)*.07})`;
+      const depth=(y-horizon)/(H-horizon);
+      bg.fillStyle=`rgba(190,160,125,${(.03+noise(i)*.08)*(1-depth*.7)})`;
       bg.fillRect(x,y,(2+noise(i+44)*22)*W/1200,Math.max(.5,H/1100));
     }
     for(let i=0;i<100;i++) {
@@ -314,18 +339,42 @@ function buildScene(ctx, W, H, mode) {
       glow(bg,x,horizon-2,Math.max(2,W*.003),'255,199,122',.25);
       bg.fillStyle='#c2a47e';bg.fillRect(x,horizon-2,Math.max(1,W/1300),1);
     }
-    line(bg,[[0,horizon],[W,horizon]],'#101e28',Math.max(2,H*.005));
+    line(bg,[[0,horizon],[W,horizon]],'#1a1512',Math.max(2,H*.005));
+    // Static reflection of the skyline and shore lights, drawn once per size.
+    const skyline=surface(ctx,W,H), sk=skyline.getContext('2d');
+    sk.save();sk.beginPath();sk.rect(0,horizon,W,H-horizon);sk.clip();
+    sk.translate(0,horizon*2);sk.scale(1,-1);
+    sk.filter=`blur(${Math.max(1.2,H/500)}px)`;
+    sk.drawImage(background,0,0);
+    sk.restore();
+    const skFade=sk.createLinearGradient(0,horizon,0,H);
+    skFade.addColorStop(0,'rgba(0,0,0,.42)');skFade.addColorStop(.35,'rgba(0,0,0,.12)');skFade.addColorStop(.8,'rgba(0,0,0,0)');
+    sk.save();sk.globalCompositeOperation='destination-in';sk.fillStyle=skFade;sk.fillRect(0,0,W,H);sk.restore();
+    bg.drawImage(skyline,0,0);
   } else {
     const bh=streetHeight,bw=bh*.43,x=W*.50-bw/2,y=horizon-bh;
-    corners=[[x,y],[x+bw,y],[x+bw,horizon],[x,horizon]];
+    const taper=close?bw*.07:bw*.045;
+    corners=[[x+taper,y],[x+bw-taper,y],[x+bw,horizon],[x,horizon]];
     sideWidth=0;
     const ground=bg.createLinearGradient(0,horizon,0,H);
-    ground.addColorStop(0,'#343b3a');ground.addColorStop(1,'#131f28');
+    ground.addColorStop(0,'#4a4238');ground.addColorStop(.5,'#2e2b28');ground.addColorStop(1,'#15171c');
     bg.fillStyle=ground;bg.fillRect(0,horizon,W,H-horizon);
-    for(let i=-8;i<=8;i++)line(bg,[[W*.52+i*W*.035,horizon],[W*.52+i*W*.19,H]],'rgba(149,152,138,.13)',Math.max(1,W/1500));
-    for(let i=0;i<5;i++) {
-      const y=horizon+(H-horizon)*(i/5)**1.8;
-      line(bg,[[0,y],[W,y]],'rgba(145,153,146,.13)',Math.max(1,W/1500));
+    // Paving: faint joint lines in perspective and a grainy surface.
+    for(let i=0;i<7;i++) {
+      const y=horizon+(H-horizon)*((i+1)/7)**1.7;
+      line(bg,[[0,y],[W,y]],'rgba(120,110,95,.10)',Math.max(1,W/1600));
+    }
+    for(let i=0;i<2500;i++) {
+      const y=horizon+noise(i+5)*(H-horizon),xg=noise(i+900)*W;
+      bg.fillStyle=`rgba(${noise(i)>.5?'200,180,150':'20,16,12'},${.03+noise(i+3)*.06})`;
+      bg.fillRect(xg,y,Math.max(1,W/900)*(1+noise(i+7)*3),Math.max(1,H/900));
+    }
+    // Lawn edge either side of the walkway to the lobby.
+    for(const [x0,x1] of [[0,W*.32],[W*.68,W]]) {
+      const lawn=bg.createLinearGradient(x0,0,x1,0);
+      const inner=x0===0?1:0;
+      lawn.addColorStop(inner,'rgba(40,52,30,0)');lawn.addColorStop(1-inner,'rgba(40,52,30,.5)');
+      bg.fillStyle=lawn;bg.fillRect(x0,horizon+H*.02,x1-x0,H);
     }
     tree(bg,W*.10,horizon+H*.015,Math.min(H*.27,W*.27),11);
     tree(bg,W*.86,horizon+H*.018,Math.min(H*.23,W*.26),56);
@@ -344,24 +393,28 @@ function lightWindow(ctx, {points,index}, frame) {
   if(!peak)return;
   const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
   const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
-  const cx=x+w/2,cy=y+h*.65;
-  // Restrained exterior spill; saturated blue remains visible as well as green.
+  const cx=x+w/2,cy=y+h/2,col=`${r},${g},${b}`;
+  // Colour spill onto the surrounding concrete and a wide soft bloom in the haze.
   ctx.save();ctx.globalCompositeOperation='screen';
-  glow(ctx,cx,cy,Math.max(w,h)*1.2,`${r},${g},${b}`,.20*peak);
+  glow(ctx,cx,cy,Math.max(w,h)*2.1,col,.10*peak);
+  glow(ctx,cx,cy,Math.max(w,h)*.95,col,.22*peak);
   ctx.restore();
   ctx.save();polygon(ctx,points);ctx.clip();
-  const interior=ctx.createLinearGradient(x,y,x,y+h);
-  interior.addColorStop(0,rgba(r,g,b,.38));
-  interior.addColorStop(.55,rgba(r,g,b,.65));
-  interior.addColorStop(1,rgba(r,g,b,.96));
-  ctx.fillStyle=interior;ctx.fillRect(x,y,w,h);
-  // Grazing light reveals the jambs and sill, with the source near the floor.
-  ctx.strokeStyle=rgba(r,g,b,.95);ctx.lineWidth=Math.max(.65,w*.08);
+  // The 2026 modules light the whole pane almost evenly; a little falloff at
+  // the edges and a slightly brighter core keep it from reading as a flat tile.
+  ctx.fillStyle=rgba(r,g,b,.90);ctx.fillRect(x,y,w,h);
+  const core=ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(w,h)*.7);
+  core.addColorStop(0,rgba(Math.min(255,r+70),Math.min(255,g+70),Math.min(255,b+70),.55*peak));
+  core.addColorStop(1,rgba(r,g,b,0));
+  ctx.fillStyle=core;ctx.fillRect(x,y,w,h);
+  const edge=ctx.createLinearGradient(x,y,x,y+h);
+  edge.addColorStop(0,'rgba(0,0,0,.18)');edge.addColorStop(.25,'rgba(0,0,0,0)');
+  edge.addColorStop(.8,'rgba(0,0,0,0)');edge.addColorStop(1,'rgba(0,0,0,.12)');
+  ctx.fillStyle=edge;ctx.fillRect(x,y,w,h);
+  // Central mullion and frame stay in front of the light.
+  line(ctx,[[cx,y],[cx,y+h]],'rgba(20,20,18,.55)',Math.max(.7,w*.035));
+  ctx.strokeStyle='rgba(15,14,12,.35)';ctx.lineWidth=Math.max(.6,w*.03);
   polygon(ctx,points,null,ctx.strokeStyle,ctx.lineWidth);
-  glow(ctx,cx,y+h*.87,w*.56,`${r},${g},${b}`,.80*peak);
-  const highlight=rgba(Math.min(255,r+35),Math.min(255,g+35),Math.min(255,b+35),peak*.45);
-  line(ctx,[[x+w*.12,y+h*.89],[x+w*.88,y+h*.89]],highlight,Math.max(.6,h*.025));
-  line(ctx,[[x+w*.50,y],[x+w*.50,y+h]],'rgba(9,16,22,.25)',Math.max(.5,w*.025));
   ctx.restore();
 }
 
