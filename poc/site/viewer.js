@@ -10,13 +10,14 @@ $("py").textContent = `from gbsim import WebDisplay, Color\nd = WebDisplay("${na
 $("toggle").onclick = () => { const h = $("conn").style.display === "none"; $("conn").style.display = h ? "" : "none"; $("toggle").textContent = h ? "hide connection info" : "show connection info"; };
 
 // View state lives in the URL so any link reproduces exactly what it shows:
-//   /{name}?view=close|street|river&real=1&fit=1
+//   /{name}?view=close|street|river&real=1&fit=1&fx=0
 const VIEWS = ["close", "street", "river"];
 const params = new URLSearchParams(location.search);
 let view = VIEWS.includes(params.get("view")) ? params.get("view") : "close";
 $("view").value = view;
 $("real").checked = params.get("real") === "1";
 $("fit").checked = params.get("fit") === "1";
+$("fx").checked = params.get("fx") !== "0";
 const isRiver = () => view === "river";
 $("realRow").hidden = !isRiver(); $("fitRow").hidden = !isRiver();
 function syncUrl() {
@@ -24,16 +25,19 @@ function syncUrl() {
   u.searchParams.set("view", view);
   if (isRiver() && $("real").checked) u.searchParams.set("real", "1"); else u.searchParams.delete("real");
   if (isRiver() && $("fit").checked) u.searchParams.set("fit", "1"); else u.searchParams.delete("fit");
+  if ($("fx").checked) u.searchParams.delete("fx"); else u.searchParams.set("fx", "0");
   history.replaceState(null, "", u);
 }
 $("view").onchange = () => { view = $("view").value; $("realRow").hidden = !isRiver(); $("fitRow").hidden = !isRiver(); syncUrl(); dirty = true; };
 $("real").onchange = () => { syncUrl(); dirty = true; };
 $("fit").onchange = () => { syncUrl(); dirty = true; };
+$("fx").onchange = () => { presenter.setEffects($("fx").checked); syncUrl(); dirty = true; };
 const opts = () => ({ realistic: isRiver() && $("real").checked, fit: isRiver() && $("fit").checked });
 syncUrl();
 
 const c = $("c");
 const presenter = webglAvailable() ? createPresenter(c) : createFallback(c);
+presenter.setEffects($("fx").checked);
 let dirty = true;
 const fit = () => {
   const r = c.getBoundingClientRect(), d = Math.min(devicePixelRatio || 1, 2);

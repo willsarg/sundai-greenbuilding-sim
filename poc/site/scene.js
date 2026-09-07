@@ -105,6 +105,8 @@ export function createPresenter(target) {
   let W = 0, H = 0;
   return {
     bloom, source, texture, renderer,
+    // Bloom, water, haze, grain, fringe on or off; the plain render always runs.
+    setEffects(on) { bloom.enabled = wide.enabled = atmosphere.enabled = !!on; },
     resize(w, h) {
       if (w === W && h === H) return;
       W = w; H = h;
@@ -147,6 +149,7 @@ export function createFallback(target) {
     resize(w, h) { W = w; H = h; target.width = w; target.height = h; },
     draw(frame, view, opts) { if (W && H) painters[view](ctx, frame, W, H, opts); },
     tick() {},
+    setEffects() {},
     dispose() {},
   };
 }
