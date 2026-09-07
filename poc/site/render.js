@@ -287,7 +287,18 @@ function tree(ctx, x, y, size, seed, lit=0) {
   // small translucent leaf clusters so it reads as foliage, not a black blob.
   // `lit` (+1 / -1) is the side the nearest lamp light falls on.
   const top=y-size*.62;
-  polygon(ctx,[[x-size*.028,y],[x+size*.028,y],[x+size*.012,top],[x-size*.012,top]],'#1a140f');
+  // Soft shadow pool where the trunk meets the ground, then a bark gradient
+  // lit on the lamp side, so the base is a trunk and not a black post.
+  ctx.save();ctx.globalAlpha=.35;
+  ctx.fillStyle='#0d0b09';ctx.beginPath();ctx.ellipse(x,y,size*.09,size*.018,0,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+  const bark=ctx.createLinearGradient(x-size*.03,0,x+size*.03,0);
+  if(lit>=0){bark.addColorStop(0,'#1f1812');bark.addColorStop(.55,'#3a2e24');bark.addColorStop(1,'#5a4a3a');}
+  else{bark.addColorStop(0,'#5a4a3a');bark.addColorStop(.45,'#3a2e24');bark.addColorStop(1,'#1f1812');}
+  polygon(ctx,[[x-size*.03,y],[x+size*.03,y],[x+size*.011,top],[x-size*.011,top]],bark);
+  // Dense clusters low in the crown so the trunk disappears into foliage.
+  for(let i=0;i<10;i++){const cx=x+(noise(seed+i*17)-.5)*size*.30, cy=top+size*(.02+noise(seed+i*19)*.10);
+    ctx.fillStyle='rgba(20,22,16,.92)';ctx.beginPath();ctx.ellipse(cx,cy,size*.10,size*.075,0,0,Math.PI*2);ctx.fill();}
   for(const [dx,dy,len,ang] of [[0,.40,.26,-.9],[0,.48,.22,.8],[0,.56,.18,-.4]]) {
     const bx=x+dx*size, by=y-dy*size;
     line(ctx,[[bx,by],[bx+Math.sin(ang)*size*len,by-Math.cos(ang)*size*len]],'#1a140f',Math.max(1,size*.014));
