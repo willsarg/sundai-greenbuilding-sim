@@ -1,4 +1,4 @@
-"""Upload a 6 s looping animation (a bouncing bar) and exit; the display keeps playing it.
+"""Upload a ~6 s looping animation (a bouncing bar) and exit; the display keeps playing it.
 usage: python clip_demo.py <name> [base_url]        (base_url defaults to the hosted simulator)
 """
 import sys, colorsys
@@ -6,14 +6,15 @@ from gbsim import WebDisplay, Color
 
 name = sys.argv[1]
 d = WebDisplay(name, *sys.argv[2:3])
-FPS, SECS = 30, 6
+FPS, PERIOD, BOUNCES = 30, 32, 6                  # 32-frame bounce; clip = whole bounces so the loop is seamless
+N = PERIOD * BOUNCES
 frames = []
-for t in range(FPS * SECS):
+for t in range(N):
     f = d.makeframe()
-    pos = t % 32
-    row = pos if pos < 16 else 32 - pos            # bounce 0..16..0
+    pos = t % PERIOD
+    row = pos if pos < 16 else PERIOD - pos        # bounce 0..16..0
     for c in range(f.ncols()):
-        h = (c / f.ncols() + t / (FPS * SECS)) % 1.0
+        h = (c / f.ncols() + t / N) % 1.0
         r, g, b = colorsys.hsv_to_rgb(h, 1, 1)
         f[row][c] = Color(r * 255, g * 255, b * 255)
     frames.append(f)
