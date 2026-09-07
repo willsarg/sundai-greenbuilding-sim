@@ -86,14 +86,15 @@ Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` 
 | `POST` | `/api/i/<name>/clip` | JSON `{"fps": 1..30, "frames": [<frame>, ...]}` (1..900 frames) or binary `[0x43, fps, countLo, countHi]` + frames | `201 {ok, clip: {fps, frames}}`; `400` with `{error}` |
 | `DELETE` | `/api/i/<name>/clip` | | `204` |
 | `GET` | `/api/i/<name>/` | | `200 {created_at, last_frame_at, viewers, frames, used, clip}` |
+| `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <event password>` | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password |
 | `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
 | `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
 
 Notes:
 
 - Names are `adjective-animal`, lower-case ASCII. Anything else is a `400`.
-- A name is reserved when it is handed out or when it receives its first frame. There is no
-  release; the pool has 1296 names.
+- A name is reserved when it is handed out or when it receives its first frame. The pool has
+  1296 names; the admin `DELETE` above releases one.
 - Frames are applied on a 33 ms tick, so reading `/frame` immediately after posting one can
   return the previous frame.
 - `frames`, `viewers` and `created_at` in the status are in-memory counters that reset whenever
@@ -106,6 +107,15 @@ cd poc
 python3 python/demo.py <name>       https://sundai.willsarg.com/api   # live rainbow at 30 fps
 python3 python/clip_demo.py <name>                                     # 6 s bouncing bar, looped
 ```
+
+## Load check
+
+```
+cd poc/python && EVENT_PASSWORD=<event password> python3 load_test.py 50 60
+```
+
+Creates 50 instances, streams 30 fps to each for 60 s, reports accepted fps, then wipes every
+instance it created.
 
 ## Running it yourself
 

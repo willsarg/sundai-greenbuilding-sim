@@ -13,7 +13,7 @@ const NAME_RE = /^[a-z]+-[a-z]+$/;
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...CORS } });
@@ -51,8 +51,17 @@ export default {
     if (m) {
       const name = m[1];
       if (!NAME_RE.test(name)) return json({ error: "bad instance name" }, 400);
-      if (m[2] === "/claim") return json({ error: "not found" }, 404);   // internal: only the allocator above may claim
+      const sub = m[2] || "/";
+      if (sub === "/claim" || sub === "/reset") return json({ error: "not found" }, 404);   // internal routes
       const stub = env.INSTANCE.get(env.INSTANCE.idFromName(name));
+      // Admin: DELETE /api/i/{name} with the event password wipes the instance (frame, clip,
+      // reservation) and returns its name to the pool. Viewers get a black frame and no clip.
+      if (sub === "/" && req.method === "DELETE") {
+        const auth = req.headers.get("authorization") || "";
+        if (!env.EVENT_PASSWORD) return json({ error: "server has no EVENT_PASSWORD configured" }, 503);
+        if (auth !== `Bearer ${env.EVENT_PASSWORD}`) return json({ error: "unauthorized" }, 401);
+        return stub.fetch(new Request(`${url.origin}/api/i/${name}/reset`, { method: "POST" }));
+      }
       return stub.fetch(req);
     }
 

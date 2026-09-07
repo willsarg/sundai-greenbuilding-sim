@@ -153,6 +153,20 @@ export class Instance extends DurableObject {
     const url = new URL(req.url);
     const sub = url.pathname.replace(/^\/api\/i\/[^/]+/, "") || "/";
 
+    if (sub === "/reset" && req.method === "POST") {
+      // Wipe everything: storage, reservation, clip, frame, counters. Reached only via the
+      // password-checked DELETE /api/i/{name} in the worker.
+      if (this.tickTimer) { clearTimeout(this.tickTimer); this.tickTimer = null; }
+      if (this.saveTimer) { clearTimeout(this.saveTimer); this.saveTimer = null; }
+      await this.ctx.storage.deleteAll();
+      this.frame = new Uint8Array(BYTES); this.pending = null; this.clip = null;
+      this.used = false; this.frames = 0; this.lastAt = null; this.savedAt = 0;
+      for (const ws of this.ctx.getWebSockets()) {
+        try { ws.send(EMPTY_CLIP); ws.send(this.frame); } catch {}
+      }
+      return json({ ok: true, name: url.pathname.split("/")[3] });
+    }
+
     if (sub === "/claim" && req.method === "POST") {
       return json({ used: true }, this.markUsed() ? 201 : 409);
     }
