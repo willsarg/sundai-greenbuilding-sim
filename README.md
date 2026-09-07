@@ -15,6 +15,19 @@ You get back a name like `brave-otter`, plus a `send_url` and a `view_url`. Open
 `view_url` in a browser: `https://sundai.willsarg.com/brave-otter`. Add `?view=river` or
 `?view=street` for the other camera angles.
 
+## Python setup
+
+The client is the `gbsim` package in `poc/python`. It needs numpy (the upstream `Frame` is a
+numpy array); the demos also use only the standard library.
+
+```
+cd poc/python
+pip install -r requirements.txt      # or: uv pip install -r requirements.txt
+python3 -c "import gbsim; print('ok')"
+```
+
+Run scripts from `poc/python`, or add it to `PYTHONPATH`, so `from gbsim import ...` resolves.
+
 ## Two ways to drive it
 
 **Compatibility rule.** The real building's display interface is exactly two methods,
@@ -59,8 +72,32 @@ Live frames always take over while they arrive. Two seconds after the last live 
 resumes where it paused. The status line under the instance name tells you which mode you are
 seeing.
 
-Raw HTTP: `POST /api/i/<name>/clip` with JSON `{"fps": 30, "frames": [<17×9×[r,g,b]>, ...]}`,
-`DELETE` the same URL to clear.
+## API reference
+
+Base URL `https://sundai.willsarg.com`. All responses are JSON unless noted; CORS is open.
+Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` one with a 403
+(the `gbsim` client already does).
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| `POST` | `/api/instances` | `{"password": "..."}` | `201 {name, send_url, view_url, ws_url}`; `401` bad password; `503` no free names |
+| `POST` | `/api/i/<name>/frame` | JSON `[[[r,g,b] × 9] × 17]` or `application/octet-stream` 459 bytes (row-major RGB) | `204`; `400` with `{error}` on a malformed frame; `429` above 40 posts/s |
+| `GET` | `/api/i/<name>/frame` | | `200` current frame as `[[[r,g,b] × 9] × 17]` |
+| `POST` | `/api/i/<name>/clip` | JSON `{"fps": 1..30, "frames": [<frame>, ...]}` (1..900 frames) or binary `[0x43, fps, countLo, countHi]` + frames | `201 {ok, clip: {fps, frames}}`; `400` with `{error}` |
+| `DELETE` | `/api/i/<name>/clip` | | `204` |
+| `GET` | `/api/i/<name>/` | | `200 {created_at, last_frame_at, viewers, frames, used, clip}` |
+| `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
+| `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
+
+Notes:
+
+- Names are `adjective-animal`, lower-case ASCII. Anything else is a `400`.
+- A name is reserved when it is handed out or when it receives its first frame. There is no
+  release; the pool has 1296 names.
+- Frames are applied on a 33 ms tick, so reading `/frame` immediately after posting one can
+  return the previous frame.
+- `frames`, `viewers` and `created_at` in the status are in-memory counters that reset whenever
+  the instance goes idle or the service is redeployed. The frame and clip themselves persist.
 
 ## Demos
 
