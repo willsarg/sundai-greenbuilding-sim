@@ -1,7 +1,9 @@
 <!doctype html>
-<!-- Content mirrors the README at the repo root (sections "Get an instance" through "API reference").
+<!-- Content mirrors the README at the repo root (sections "Get an instance" through "Demos").
      The README is the source of truth; update both when the API changes. -->
+<html lang="en">
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Green Building sim — API docs</title>
 <style>
@@ -9,37 +11,39 @@
   a { color: #8cf; }
   h1 small { font-weight: normal; color: #999; }
   h2 { margin-top: 2.5rem; border-bottom: 1px solid #333; padding-bottom: .25rem; }
-  code, pre { font: 14px ui-monospace, Menlo, monospace; background: #1c1c1c; }
+  code, pre { font: 14px/1.5 ui-monospace, Menlo, monospace; background: #1c1c1c; }
   code { padding: .1rem .3rem; border-radius: 3px; }
   pre { padding: .75rem 1rem; border-radius: 6px; overflow-x: auto; }
   pre code { padding: 0; background: none; }
+  .scroll { max-width: 100%; overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th, td { text-align: left; vertical-align: top; padding: .4rem .5rem; border-bottom: 1px solid #333; }
   th { color: #bbb; font-weight: 600; }
   .note { color: #bbb; }
 </style>
-<p><a href="/">← back</a></p>
+<p><a href="/">← back</a> · <a href="#get-an-instance">Get an instance</a> · <a href="#python-setup">Python setup</a> · <a href="#two-ways-to-drive-it">Live vs clip</a> · <a href="#api-reference">API reference</a> · <a href="#demos">Demos</a></p>
 <h1>Green Building sim <small>API docs</small></h1>
 <p>A web simulator of the MIT Green Building's 17 × 9 window display. Every team gets its own instance at
 <strong>https://sundai.willsarg.com</strong>, drives it with the same <code>Display</code> interface as the real building,
 and anyone can watch it live in a browser.</p>
 
-<h2>Get an instance</h2>
+<h2 id="get-an-instance">Get an instance</h2>
 <pre><code>curl -X POST https://sundai.willsarg.com/api/instances \
   -H 'content-type: application/json' -d '{"password":"&lt;event password&gt;"}'</code></pre>
 <p>You get back a name like <code>brave-otter</code>, plus a <code>send_url</code> and a <code>view_url</code>. Open the
 <code>view_url</code> in a browser: <code>https://sundai.willsarg.com/brave-otter</code>. Add <code>?view=river</code> or
 <code>?view=street</code> for the other camera angles.</p>
 
-<h2>Python setup</h2>
-<p>The client is the <code>gbsim</code> package in <code>poc/python</code> of the repo. It needs numpy (the upstream
+<h2 id="python-setup">Python setup</h2>
+<p>The client is the <code>gbsim</code> package in <code>poc/python</code> of
+<a href="https://github.com/willsarg/sundai-greenbuilding-sim">the repo</a>; the commands below run from a local checkout. It needs numpy (the upstream
 <code>Frame</code> is a numpy array); the demos use only the standard library.</p>
 <pre><code>cd poc/python
 pip install -r requirements.txt      # or: uv pip install -r requirements.txt
 python3 -c "import gbsim; print('ok')"</code></pre>
 <p>Run scripts from <code>poc/python</code>, or add it to <code>PYTHONPATH</code>, so <code>from gbsim import ...</code> resolves.</p>
 
-<h2>Two ways to drive it</h2>
+<h2 id="two-ways-to-drive-it">Two ways to drive it</h2>
 <p><strong>Compatibility rule.</strong> The real building's display interface is exactly two methods,
 <code>makeframe()</code> and <code>send(frame)</code>, plus <code>Frame</code> and <code>Color</code>
 (<code>gbsim/display.py</code> is a verbatim copy of the upstream file). Game code that only uses those runs
@@ -47,7 +51,7 @@ unchanged on the real building. Everything else in <code>gbsim</code> is simulat
 <code>clear_clip</code>, and <code>WebDisplay.flush()</code> / <code>close()</code> / <code>with</code>. Keep those out of
 your game code; put clip uploads in a separate script.</p>
 
-<h3>Live — your code streams frames</h3>
+<h3 id="live">Live — your code streams frames</h3>
 <p>Best for interactive things (a playable game). Your program runs the whole time.</p>
 <pre><code>from gbsim import WebDisplay, Color          # poc/python/gbsim
 d = WebDisplay("brave-otter")
@@ -60,7 +64,7 @@ number of <code>send()</code> calls; that is dropped-by-design, not an error. Th
 reached it, so if two copies of your program run at once the building flickers between them: that is the signal to
 kill one. Each instance accepts at most 40 frames per second in total.</p>
 
-<h3>Clip — upload an animation once, it loops forever</h3>
+<h3 id="clip">Clip — upload an animation once, it loops forever</h3>
 <p>Best for pre-rendered animations. Upload, close your laptop, the building keeps playing.</p>
 <pre><code>from gbsim import Frame, upload_clip, clear_clip   # simulator-only helpers
 frames = [Frame() for _ in range(180)]             # 1..900 frames
@@ -72,11 +76,11 @@ cycles or the loop will jump at the seam.</p>
 <p>Live frames always take over while they arrive. Two seconds after the last live frame, the clip resumes where it
 paused. The status line under the instance name tells you which mode you are seeing.</p>
 
-<h2>API reference</h2>
+<h2 id="api-reference">API reference</h2>
 <p>Base URL <code>https://sundai.willsarg.com</code>. All responses are JSON unless noted; CORS is open.
 Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code>Python-urllib</code> one with a 403
 (the <code>gbsim</code> client already does).</p>
-<table>
+<div class="scroll"><table>
 <tr><th>Method</th><th>Path</th><th>Body</th><th>Response</th></tr>
 <tr><td><code>POST</code></td><td><code>/api/instances</code></td><td><code>{"password": "..."}</code></td><td><code>201 {name, send_url, view_url, ws_url}</code>; <code>401</code> bad password; <code>503</code> no free names</td></tr>
 <tr><td><code>POST</code></td><td><code>/api/i/&lt;name&gt;/frame</code></td><td>JSON <code>[[[r,g,b] × 9] × 17]</code> or <code>application/octet-stream</code> 459 bytes (row-major RGB)</td><td><code>204</code>; <code>400</code> with <code>{error}</code> on a malformed frame; <code>429</code> above 40 posts/s</td></tr>
@@ -86,8 +90,9 @@ Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code
 <tr><td><code>GET</code></td><td><code>/api/i/&lt;name&gt;/</code></td><td></td><td><code>200 {created_at, last_frame_at, viewers, frames, used, clip}</code></td></tr>
 <tr><td><code>DELETE</code></td><td><code>/api/i/&lt;name&gt;</code></td><td>header <code>Authorization: Bearer &lt;event password&gt;</code></td><td><code>200 {ok, name}</code>: wipes frame, clip and reservation, returns the name to the pool; <code>401</code> bad password</td></tr>
 <tr><td><code>WS</code></td><td><code>/api/i/&lt;name&gt;/view</code></td><td></td><td>binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip)</td></tr>
+<tr><td><code>POST</code></td><td><code>/docs</code></td><td>form field <code>password=&lt;event password&gt;</code></td><td>this page, plus a 12 h cookie so <code>GET /docs</code> keeps working; wrong password bounces to <code>/?docs=denied</code></td></tr>
 <tr><td><code>GET</code></td><td><code>/&lt;name&gt;</code></td><td></td><td>the viewer page; <code>?view=close|street|river</code>, <code>&amp;real=1</code>, <code>&amp;fit=1</code>, <code>&amp;fx=0</code></td></tr>
-</table>
+</table></div>
 <p class="note">Notes:</p>
 <ul class="note">
   <li>Names are <code>adjective-animal</code>, lower-case ASCII. Anything else is a <code>400</code>.</li>
@@ -96,7 +101,7 @@ Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code
   <li><code>frames</code>, <code>viewers</code> and <code>created_at</code> in the status are in-memory counters that reset whenever the instance goes idle or the service is redeployed. The frame and clip themselves persist.</li>
 </ul>
 
-<h2>Demos</h2>
+<h2 id="demos">Demos</h2>
 <pre><code>cd poc
 python3 python/demo.py &lt;name&gt;       https://sundai.willsarg.com/api   # live rainbow at 30 fps
 python3 python/clip_demo.py &lt;name&gt;                                     # 6 s bouncing bar, looped</code></pre>
