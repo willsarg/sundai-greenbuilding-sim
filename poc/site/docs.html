@@ -30,8 +30,8 @@ and anyone can watch it live in a browser.</p>
 <h2 id="get-an-instance">Get an instance</h2>
 <pre><code>curl -X POST https://sundai.willsarg.com/api/instances \
   -H 'content-type: application/json' -d '{"password":"&lt;event password&gt;"}'</code></pre>
-<p>You get back a name like <code>brave-otter</code>, plus a <code>send_url</code> and a <code>view_url</code>. Open the
-<code>view_url</code> in a browser: <code>https://sundai.willsarg.com/brave-otter</code>. Add <code>?view=river</code> or
+<p>You get back an adjective-animal name, plus a <code>send_url</code> and a <code>view_url</code>. Open the
+<code>view_url</code> in a browser: <code>https://sundai.willsarg.com/your-instance</code>. Add <code>?view=river</code> or
 <code>?view=street</code> for the other camera angles.</p>
 
 <h2 id="quick-start">Quick start, step by step</h2>
@@ -42,10 +42,10 @@ and anyone can watch it live in a browser.</p>
 cd sundai-greenbuilding-sim/poc/python
 pip install -r requirements.txt      # or: uv pip install -r requirements.txt</code></pre></li>
   <li><strong>Get an instance.</strong> Open the <a href="/" target="_blank">landing page</a> in another tab, type
-    the event password and press <em>Create</em>. You land on your instance's viewer. Note the name in the URL (say
-    <code>brave-otter</code>): that is what your code will target. Keep the viewer tab open and come back here.</li>
+    the event password and press <em>Create</em>. You land on your instance's viewer. Note the adjective-animal name in the URL:
+    that is what your code will target. The snippets below write <code>your-instance</code> wherever it goes. Keep the viewer tab open and come back here.</li>
   <li><strong>Light one window.</strong> Save this as <code>hello.py</code> in <code>poc/python</code> and run
-    <code>python3 hello.py brave-otter</code>:
+    <code>python3 hello.py your-instance</code>:
 <pre><code>import sys, time
 from gbsim import WebDisplay, Color
 
@@ -65,9 +65,9 @@ while True:
     d.send(f)
     i += 1
     time.sleep(1 / 30)</code></pre>
-    For a fuller example, from the <code>poc/python</code> folder run <code>python3 demo.py brave-otter</code>
+    For a fuller example, from the <code>poc/python</code> folder run <code>python3 demo.py your-instance</code>
     (a scrolling rainbow at 30 fps).</li>
-  <li><strong>Share it.</strong> Send anyone <code>https://sundai.willsarg.com/brave-otter</code>. Add
+  <li><strong>Share it.</strong> Send anyone <code>https://sundai.willsarg.com/your-instance</code>. Add
     <code>?view=street</code> or <code>?view=river</code> for other camera angles.</li>
   <li><strong>Optional: leave a loop running without your laptop.</strong> Render your frames up front and upload
     them once as a clip; it plays forever, and live frames take over whenever you send them again:
@@ -77,8 +77,8 @@ for i in range(90):                  # 3 s at 30 fps
     f = Frame()
     f[i % 17][i % 9] = Color(0, 255, 0)
     frames.append(f)
-upload_clip("brave-otter", frames, fps=30)</code></pre>
-    From the <code>poc/python</code> folder, <code>python3 clip_demo.py brave-otter</code> does the same with a
+upload_clip("your-instance", frames, fps=30)</code></pre>
+    From the <code>poc/python</code> folder, <code>python3 clip_demo.py your-instance</code> does the same with a
     bouncing bar.
     <br><strong>Keep this out of your game code.</strong> <code>upload_clip</code>, <code>clear_clip</code> and
     <code>WebDisplay.flush()</code> / <code>close()</code> are simulator-only. The real building only has
@@ -107,7 +107,7 @@ your game code; put clip uploads in a separate script.</p>
 <h3 id="live">Live — your code streams frames</h3>
 <p>Best for interactive things (a playable game). Your program runs the whole time.</p>
 <pre><code>from gbsim import WebDisplay, Color          # poc/python/gbsim
-d = WebDisplay("brave-otter")
+d = WebDisplay("your-instance")
 f = d.makeframe()
 f[0][0] = Color(255, 0, 0)
 d.send(f)                                    # non-blocking; call it up to 30 times a second</code></pre>
@@ -122,8 +122,8 @@ kill one. Each instance accepts at most 40 frames per second in total.</p>
 <pre><code>from gbsim import Frame, upload_clip, clear_clip   # simulator-only helpers
 frames = [Frame() for _ in range(180)]             # 1..900 frames
 # ...draw into each frame...
-upload_clip("brave-otter", frames, fps=30)         # fps 1..30
-clear_clip("brave-otter")                          # remove it</code></pre>
+upload_clip("your-instance", frames, fps=30)         # fps 1..30
+clear_clip("your-instance")                          # remove it</code></pre>
 <p>The clip wraps straight from the last frame to the first, so make its length a whole number of your animation's
 cycles or the loop will jump at the seam.</p>
 <p>Live frames always take over while they arrive. Two seconds after the last live frame, the clip resumes where it

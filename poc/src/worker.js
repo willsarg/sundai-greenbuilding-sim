@@ -9,6 +9,9 @@ const ANIMAL = ["cat", "otter", "heron", "fox", "lynx", "koala", "finch", "moose
   "puma", "quail", "raven", "swan", "toad", "viper", "wren", "zebra", "bison", "camel", "dingo", "egret"];
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const NAME_RE = /^[a-z]+-[a-z]+$/;
+// A name is only valid if both halves come from the pool above; anything else (e.g. the docs'
+// placeholder "your-instance") is a 400 rather than a silently-created instance.
+const validName = (n) => { const [a, b] = n.split("-"); return NAME_RE.test(n) && ADJ.includes(a) && ANIMAL.includes(b); };
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -64,7 +67,7 @@ export default {
     const m = url.pathname.match(/^\/api\/i\/([^/]+)(\/.*)?$/);
     if (m) {
       const name = m[1];
-      if (!NAME_RE.test(name)) return json({ error: "bad instance name" }, 400);
+      if (!validName(name)) return json({ error: "bad instance name" }, 400);
       const sub = m[2] || "/";
       if (sub === "/claim" || sub === "/reset") return json({ error: "not found" }, 404);   // internal routes
       const stub = env.INSTANCE.get(env.INSTANCE.idFromName(name));
@@ -101,7 +104,7 @@ export default {
     if (url.pathname === "/") {
       return env.ASSETS.fetch(new Request(`${url.origin}/index.html`, req));
     }
-    if (NAME_RE.test(url.pathname.slice(1))) {
+    if (validName(url.pathname.slice(1))) {
       return env.ASSETS.fetch(new Request(`${url.origin}/view.html`, req));
     }
     return env.ASSETS.fetch(req);

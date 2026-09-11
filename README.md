@@ -11,8 +11,8 @@ curl -X POST https://sundai.willsarg.com/api/instances \
   -H 'content-type: application/json' -d '{"password":"<event password>"}'
 ```
 
-You get back a name like `brave-otter`, plus a `send_url` and a `view_url`. Open the
-`view_url` in a browser: `https://sundai.willsarg.com/brave-otter`. Add `?view=river` or
+You get back an adjective-animal name, plus a `send_url` and a `view_url`. Open the
+`view_url` in a browser: `https://sundai.willsarg.com/your-instance`. Add `?view=river` or
 `?view=street` for the other camera angles.
 
 ## Quick start, step by step
@@ -26,9 +26,9 @@ From nothing to your own pixels on the building in about five minutes.
    pip install -r requirements.txt      # or: uv pip install -r requirements.txt
    ```
 2. **Get an instance.** Open https://sundai.willsarg.com in another tab, type the event password and press
-   *Create*. You land on your instance's viewer. Note the name in the URL (say `brave-otter`): that is what your
-   code will target. Keep the viewer tab open.
-3. **Light one window.** Save this as `hello.py` in `poc/python` and run `python3 hello.py brave-otter`:
+   *Create*. You land on your instance's viewer. Note the adjective-animal name in the URL: that is what your code
+   will target; the snippets below write `your-instance` wherever it goes. Keep the viewer tab open.
+3. **Light one window.** Save this as `hello.py` in `poc/python` and run `python3 hello.py your-instance`:
    ```python
    import sys, time
    from gbsim import WebDisplay, Color
@@ -51,8 +51,8 @@ From nothing to your own pixels on the building in about five minutes.
        i += 1
        time.sleep(1 / 30)
    ```
-   For a fuller example, from `poc/python` run `python3 demo.py brave-otter` (a scrolling rainbow at 30 fps).
-5. **Share it.** Send anyone `https://sundai.willsarg.com/brave-otter`. Add `?view=street` or `?view=river`
+   For a fuller example, from `poc/python` run `python3 demo.py your-instance` (a scrolling rainbow at 30 fps).
+5. **Share it.** Send anyone `https://sundai.willsarg.com/your-instance`. Add `?view=street` or `?view=river`
    for other camera angles.
 6. **Optional: leave a loop running without your laptop.** Render frames up front and upload them once as a
    clip; it plays forever, and live frames take over whenever you send them again:
@@ -63,9 +63,9 @@ From nothing to your own pixels on the building in about five minutes.
        f = Frame()
        f[i % 17][i % 9] = Color(0, 255, 0)
        frames.append(f)
-   upload_clip("brave-otter", frames, fps=30)
+   upload_clip("your-instance", frames, fps=30)
    ```
-   From `poc/python`, `python3 clip_demo.py brave-otter` does the same with a bouncing bar.
+   From `poc/python`, `python3 clip_demo.py your-instance` does the same with a bouncing bar.
    **Keep this out of your game code.** `upload_clip`, `clear_clip` and `WebDisplay.flush()` / `close()` are
    simulator-only; the real building only has `makeframe()` and `send(frame)`. Put clip uploads in a separate script.
 
@@ -99,7 +99,7 @@ Best for interactive things (a playable game). Your program runs the whole time.
 
 ```python
 from gbsim import WebDisplay, Color          # poc/python/gbsim
-d = WebDisplay("brave-otter")
+d = WebDisplay("your-instance")
 f = d.makeframe()
 f[0][0] = Color(255, 0, 0)
 d.send(f)                                    # non-blocking; call it up to 30 times a second
@@ -120,8 +120,8 @@ Best for pre-rendered animations. Upload, close your laptop, the building keeps 
 from gbsim import Frame, upload_clip, clear_clip   # simulator-only helpers
 frames = [Frame() for _ in range(180)]             # 1..900 frames
 # ...draw into each frame...
-upload_clip("brave-otter", frames, fps=30)         # fps 1..30
-clear_clip("brave-otter")                          # remove it
+upload_clip("your-instance", frames, fps=30)         # fps 1..30
+clear_clip("your-instance")                          # remove it
 ```
 
 The clip wraps straight from the last frame to the first, so make its length a whole number
