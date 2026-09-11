@@ -27,7 +27,8 @@ From nothing to your own pixels on the building in about five minutes.
    ```
 2. **Get an instance.** Open https://sundai.willsarg.com in another tab, type the event password and press
    *Create*. You land on your instance's viewer. Note the adjective-animal name in the URL: that is what your code
-   will target; the snippets below write `your-instance` wherever it goes. Keep the viewer tab open.
+   will target. **Every example below says `your-instance`; replace it with your real name.** The server rejects
+   `your-instance` itself. Keep the viewer tab open.
 3. **Light one window.** Save this as `hello.py` in `poc/python` and run `python3 hello.py your-instance`:
    ```python
    import sys, time
@@ -40,7 +41,8 @@ From nothing to your own pixels on the building in about five minutes.
    time.sleep(1)                        # give the frame time to arrive before exiting
    ```
    The top-left window on the viewer turns red. Frames sit at `f[row][col]`, row 0 at the top. If nothing
-   happens or you see a connection error, check that the name matches the viewer URL exactly.
+   happens or you see a connection error, check that the name matches the viewer URL exactly. A `400 bad instance
+   name` means you left `your-instance` in.
 4. **Animate.** Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
    ```python
    i = 0
@@ -51,7 +53,8 @@ From nothing to your own pixels on the building in about five minutes.
        i += 1
        time.sleep(1 / 30)
    ```
-   For a fuller example, from `poc/python` run `python3 demo.py your-instance` (a scrolling rainbow at 30 fps).
+   For a fuller example, from `poc/python` run `python3 demo.py your-instance https://sundai.willsarg.com/api`
+   (a scrolling rainbow at 30 fps).
 5. **Share it.** Send anyone `https://sundai.willsarg.com/your-instance`. Add `?view=street` or `?view=river`
    for other camera angles.
 6. **Optional: leave a loop running without your laptop.** Render frames up front and upload them once as a
@@ -163,9 +166,9 @@ Notes:
 ## Demos
 
 ```
-cd poc
-python3 python/demo.py <name>       https://sundai.willsarg.com/api   # live rainbow at 30 fps
-python3 python/clip_demo.py <name>                                     # 6 s bouncing bar, looped
+cd poc/python
+python3 demo.py <name> https://sundai.willsarg.com/api   # live rainbow at 30 fps (URL required: demo.py defaults to localhost)
+python3 clip_demo.py <name>                              # 6 s bouncing bar, looped
 ```
 
 ## Load check

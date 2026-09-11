@@ -43,7 +43,8 @@ cd sundai-greenbuilding-sim/poc/python
 pip install -r requirements.txt      # or: uv pip install -r requirements.txt</code></pre></li>
   <li><strong>Get an instance.</strong> Open the <a href="/" target="_blank">landing page</a> in another tab, type
     the event password and press <em>Create</em>. You land on your instance's viewer. Note the adjective-animal name in the URL:
-    that is what your code will target. The snippets below write <code>your-instance</code> wherever it goes. Keep the viewer tab open and come back here.</li>
+    that is what your code will target. <strong>Every example below says <code>your-instance</code>; replace it with
+    your real name.</strong> The server rejects <code>your-instance</code> itself. Keep the viewer tab open and come back here.</li>
   <li><strong>Light one window.</strong> Save this as <code>hello.py</code> in <code>poc/python</code> and run
     <code>python3 hello.py your-instance</code>:
 <pre><code>import sys, time
@@ -55,7 +56,8 @@ f[0][0] = Color(255, 0, 0)           # top-left window, red
 d.send(f)
 time.sleep(1)                        # give the frame time to arrive before exiting</code></pre>
     The top-left window on the viewer turns red. Frames sit at <code>f[row][col]</code>, row 0 at the top.
-    If nothing happens or you see a connection error, check that the name matches the viewer URL exactly.</li>
+    A <code>400 bad instance name</code> means you left <code>your-instance</code> in; if nothing happens or you see
+    a connection error, check that the name matches the viewer URL exactly.</li>
   <li><strong>Animate.</strong> Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
     That is the whole live mode.
 <pre><code>i = 0
@@ -65,8 +67,8 @@ while True:
     d.send(f)
     i += 1
     time.sleep(1 / 30)</code></pre>
-    For a fuller example, from the <code>poc/python</code> folder run <code>python3 demo.py your-instance</code>
-    (a scrolling rainbow at 30 fps).</li>
+    For a fuller example, from the <code>poc/python</code> folder run
+    <code>python3 demo.py your-instance https://sundai.willsarg.com/api</code> (a scrolling rainbow at 30 fps).</li>
   <li><strong>Share it.</strong> Send anyone <code>https://sundai.willsarg.com/your-instance</code>. Add
     <code>?view=street</code> or <code>?view=river</code> for other camera angles.</li>
   <li><strong>Optional: leave a loop running without your laptop.</strong> Render your frames up front and upload
@@ -155,6 +157,6 @@ Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code
 </ul>
 
 <h2 id="demos">Demos</h2>
-<pre><code>cd poc
-python3 python/demo.py &lt;name&gt;       https://sundai.willsarg.com/api   # live rainbow at 30 fps
-python3 python/clip_demo.py &lt;name&gt;                                     # 6 s bouncing bar, looped</code></pre>
+<pre><code>cd poc/python
+python3 demo.py your-instance https://sundai.willsarg.com/api   # live rainbow at 30 fps (URL required: demo.py defaults to localhost)
+python3 clip_demo.py your-instance                              # 6 s bouncing bar, looped</code></pre>
