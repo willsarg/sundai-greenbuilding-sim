@@ -21,7 +21,7 @@
   th { color: #bbb; font-weight: 600; }
   .note { color: #bbb; }
 </style>
-<p><a href="/">← back</a> · <a href="#get-an-instance">Get an instance</a> · <a href="#python-setup">Python setup</a> · <a href="#two-ways-to-drive-it">Live vs clip</a> · <a href="#api-reference">API reference</a> · <a href="#demos">Demos</a></p>
+<p><a href="/">← back</a> · <a href="#get-an-instance">Get an instance</a> · <a href="#quick-start">Quick start</a> · <a href="#python-setup">Python setup</a> · <a href="#two-ways-to-drive-it">Live vs clip</a> · <a href="#api-reference">API reference</a> · <a href="#demos">Demos</a></p>
 <h1>Green Building sim <small>API docs</small></h1>
 <p>A web simulator of the MIT Green Building's 17 × 9 window display. Every team gets its own instance at
 <strong>https://sundai.willsarg.com</strong>, drives it with the same <code>Display</code> interface as the real building,
@@ -33,6 +33,45 @@ and anyone can watch it live in a browser.</p>
 <p>You get back a name like <code>brave-otter</code>, plus a <code>send_url</code> and a <code>view_url</code>. Open the
 <code>view_url</code> in a browser: <code>https://sundai.willsarg.com/brave-otter</code>. Add <code>?view=river</code> or
 <code>?view=street</code> for the other camera angles.</p>
+
+<h2 id="quick-start">Quick start, step by step</h2>
+<p>From nothing to your own pixels on the building in about five minutes.</p>
+<ol>
+  <li><strong>Get the client.</strong>
+<pre><code>git clone https://github.com/willsarg/sundai-greenbuilding-sim.git
+cd sundai-greenbuilding-sim/poc/python
+pip install -r requirements.txt      # or: uv pip install -r requirements.txt</code></pre></li>
+  <li><strong>Get an instance.</strong> On the <a href="/">landing page</a>, type the event password and press
+    <em>Create</em>. You land on your instance's viewer; the name in the URL (say <code>brave-otter</code>) is what
+    your code will target. Keep that tab open.</li>
+  <li><strong>Light one window.</strong> Save this as <code>hello.py</code> in <code>poc/python</code> and run
+    <code>python3 hello.py brave-otter</code>:
+<pre><code>import sys, time
+from gbsim import WebDisplay, Color
+
+d = WebDisplay(sys.argv[1])          # your instance name
+f = d.makeframe()                    # 17 rows x 9 columns, all off
+f[0][0] = Color(255, 0, 0)           # top-left window, red
+d.send(f)
+time.sleep(1)                        # give the frame time to arrive before exiting</code></pre>
+    The top-left window on the viewer turns red. Frames sit at <code>f[row][col]</code>, row 0 at the top.</li>
+  <li><strong>Animate.</strong> Loop, change the frame, call <code>send()</code> each pass, sleep for
+    <code>1/30</code>. That is the whole live mode. <code>python3 demo.py brave-otter</code> is a complete example
+    (a scrolling rainbow at 30 fps).</li>
+  <li><strong>Share it.</strong> Send anyone <code>https://sundai.willsarg.com/brave-otter</code>. Add
+    <code>?view=street</code> or <code>?view=river</code> for other camera angles.</li>
+  <li><strong>Optional: leave a loop running without your laptop.</strong> Render your frames up front and upload
+    them once as a clip; it plays forever, and live frames take over whenever you send them again:
+<pre><code>from gbsim import Frame, Color, upload_clip
+frames = []
+for i in range(90):                  # 3 s at 30 fps
+    f = Frame()
+    f[i % 17][i % 9] = Color(0, 255, 0)
+    frames.append(f)
+upload_clip("brave-otter", frames, fps=30)</code></pre>
+    <code>python3 clip_demo.py brave-otter</code> does the same with a bouncing bar.</li>
+</ol>
+<p class="note">Two copies of your program aimed at one instance make the building flicker between them. Kill one.</p>
 
 <h2 id="python-setup">Python setup</h2>
 <p>The client is the <code>gbsim</code> package in <code>poc/python</code> of

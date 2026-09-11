@@ -15,6 +15,49 @@ You get back a name like `brave-otter`, plus a `send_url` and a `view_url`. Open
 `view_url` in a browser: `https://sundai.willsarg.com/brave-otter`. Add `?view=river` or
 `?view=street` for the other camera angles.
 
+## Quick start, step by step
+
+From nothing to your own pixels on the building in about five minutes.
+
+1. **Get the client.**
+   ```
+   git clone https://github.com/willsarg/sundai-greenbuilding-sim.git
+   cd sundai-greenbuilding-sim/poc/python
+   pip install -r requirements.txt      # or: uv pip install -r requirements.txt
+   ```
+2. **Get an instance.** On https://sundai.willsarg.com type the event password and press *Create*. You land
+   on your instance's viewer; the name in the URL (say `brave-otter`) is what your code will target.
+3. **Light one window.** Save this as `hello.py` in `poc/python` and run `python3 hello.py brave-otter`:
+   ```python
+   import sys, time
+   from gbsim import WebDisplay, Color
+
+   d = WebDisplay(sys.argv[1])          # your instance name
+   f = d.makeframe()                    # 17 rows x 9 columns, all off
+   f[0][0] = Color(255, 0, 0)           # top-left window, red
+   d.send(f)
+   time.sleep(1)                        # give the frame time to arrive before exiting
+   ```
+   The top-left window on the viewer turns red. Frames sit at `f[row][col]`, row 0 at the top.
+4. **Animate.** Loop, change the frame, call `send()` each pass, sleep for `1/30`. `python3 demo.py brave-otter`
+   is a complete example (a scrolling rainbow at 30 fps).
+5. **Share it.** Send anyone `https://sundai.willsarg.com/brave-otter`. Add `?view=street` or `?view=river`
+   for other camera angles.
+6. **Optional: leave a loop running without your laptop.** Render frames up front and upload them once as a
+   clip; it plays forever, and live frames take over whenever you send them again:
+   ```python
+   from gbsim import Frame, Color, upload_clip
+   frames = []
+   for i in range(90):                  # 3 s at 30 fps
+       f = Frame()
+       f[i % 17][i % 9] = Color(0, 255, 0)
+       frames.append(f)
+   upload_clip("brave-otter", frames, fps=30)
+   ```
+   `python3 clip_demo.py brave-otter` does the same with a bouncing bar.
+
+Two copies of your program aimed at one instance make the building flicker between them. Kill one.
+
 ## Python setup
 
 The client is the `gbsim` package in `poc/python`. It needs numpy (the upstream `Frame` is a
