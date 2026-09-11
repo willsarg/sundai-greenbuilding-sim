@@ -33,6 +33,9 @@ and anyone can watch it live in a browser.</p>
 <p>You get back an adjective-animal name, plus a <code>send_url</code> and a <code>view_url</code>. Open the
 <code>view_url</code> in a browser: <code>https://sundai.willsarg.com/your-instance</code>. Add <code>?view=river</code> or
 <code>?view=street</code> for the other camera angles.</p>
+<p><strong>Every example on this page writes <code>your-instance</code>. Replace it with the exact name you were
+given; do not make up your own.</strong> The server only accepts names from its own pool, and rejects
+<code>your-instance</code> itself with a <code>400</code>.</p>
 
 <h2 id="quick-start">Quick start, step by step</h2>
 <p>From nothing to your own pixels on the building in about five minutes.</p>
@@ -56,10 +59,11 @@ f[0][0] = Color(255, 0, 0)           # top-left window, red
 d.send(f)
 time.sleep(1)                        # give the frame time to arrive before exiting</code></pre>
     The top-left window on the viewer turns red. Frames sit at <code>f[row][col]</code>, row 0 at the top.
-    A <code>400 bad instance name</code> means you left <code>your-instance</code> in; if nothing happens or you see
-    a connection error, check that the name matches the viewer URL exactly.</li>
+    A <code>400 bad instance name</code> means the name is not one the server handed out, for example you left
+    <code>your-instance</code> in; if nothing happens or you see a connection error, check that the name matches the
+    viewer URL exactly.</li>
   <li><strong>Animate.</strong> Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
-    That is the whole live mode.
+    That is the whole live mode. Replace the last three lines of <code>hello.py</code> with this and run it again:
 <pre><code>i = 0
 while True:
     f = d.makeframe()
@@ -107,7 +111,8 @@ unchanged on the real building. Everything else in <code>gbsim</code> is simulat
 your game code; put clip uploads in a separate script.</p>
 
 <h3 id="live">Live — your code streams frames</h3>
-<p>Best for interactive things (a playable game). Your program runs the whole time.</p>
+<p>Best for interactive things (a playable game). Your program runs the whole time. (<code>your-instance</code>
+is your real name, as everywhere on this page.)</p>
 <pre><code>from gbsim import WebDisplay, Color          # poc/python/gbsim
 d = WebDisplay("your-instance")
 f = d.makeframe()
@@ -125,7 +130,7 @@ kill one. Each instance accepts at most 40 frames per second in total.</p>
 frames = [Frame() for _ in range(180)]             # 1..900 frames
 # ...draw into each frame...
 upload_clip("your-instance", frames, fps=30)         # fps 1..30
-clear_clip("your-instance")                          # remove it</code></pre>
+# clear_clip("your-instance")                        # run later to remove it</code></pre>
 <p>The clip wraps straight from the last frame to the first, so make its length a whole number of your animation's
 cycles or the loop will jump at the seam.</p>
 <p>Live frames always take over while they arrive. Two seconds after the last live frame, the clip resumes where it
@@ -143,14 +148,15 @@ Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code
 <tr><td><code>POST</code></td><td><code>/api/i/&lt;name&gt;/clip</code></td><td>JSON <code>{"fps": 1..30, "frames": [&lt;frame&gt;, ...]}</code> (1..900 frames) or binary <code>[0x43, fps, countLo, countHi]</code> + frames</td><td><code>201 {ok, clip: {fps, frames}}</code>; <code>400</code> with <code>{error}</code></td></tr>
 <tr><td><code>DELETE</code></td><td><code>/api/i/&lt;name&gt;/clip</code></td><td></td><td><code>204</code></td></tr>
 <tr><td><code>GET</code></td><td><code>/api/i/&lt;name&gt;/</code></td><td></td><td><code>200 {created_at, last_frame_at, viewers, frames, used, clip}</code></td></tr>
-<tr><td><code>DELETE</code></td><td><code>/api/i/&lt;name&gt;</code></td><td>header <code>Authorization: Bearer &lt;admin password&gt;</code> (not the event password)</td><td><code>200 {ok, name}</code>: wipes frame, clip and reservation, returns the name to the pool; <code>401</code> bad password</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/api/i/&lt;name&gt;</code></td><td>header <code>Authorization: Bearer &lt;admin password&gt;</code> (the <code>ADMIN_PASSWORD</code> secret, not the event password)</td><td><code>200 {ok, name}</code>: wipes frame, clip and reservation, returns the name to the pool; <code>401</code> bad password; <code>503</code> if <code>ADMIN_PASSWORD</code> is not configured</td></tr>
 <tr><td><code>WS</code></td><td><code>/api/i/&lt;name&gt;/view</code></td><td></td><td>binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip)</td></tr>
 <tr><td><code>POST</code></td><td><code>/docs</code></td><td>form field <code>password=&lt;event password&gt;</code></td><td>this page, plus a 12 h cookie so <code>GET /docs</code> keeps working; wrong password bounces to <code>/?docs=denied</code></td></tr>
 <tr><td><code>GET</code></td><td><code>/&lt;name&gt;</code></td><td></td><td>the viewer page; <code>?view=close|street|river</code>, <code>&amp;real=1</code>, <code>&amp;fit=1</code>, <code>&amp;fx=0</code></td></tr>
 </table></div>
 <p class="note">Notes:</p>
 <ul class="note">
-  <li>Names are <code>adjective-animal</code>, lower-case ASCII. Anything else is a <code>400</code>.</li>
+  <li>Names are <code>adjective-animal</code> pairs drawn from the server's fixed word pools; use the exact name
+    <em>Create</em> gave you. Any other name, including <code>your-instance</code>, is a <code>400</code>.</li>
   <li>A name is reserved when it is handed out or when it receives its first frame. The pool has 1296 names; the admin <code>DELETE</code> above releases one.</li>
   <li>Frames are applied on a 33 ms tick, so reading <code>/frame</code> immediately after posting one can return the previous frame.</li>
   <li><code>frames</code>, <code>viewers</code> and <code>created_at</code> in the status are in-memory counters that reset whenever the instance goes idle or the service is redeployed. The frame and clip themselves persist.</li>
@@ -158,5 +164,7 @@ Send a real <code>User-Agent</code> header: Cloudflare rejects the default <code
 
 <h2 id="demos">Demos</h2>
 <pre><code>cd poc/python
-python3 demo.py your-instance https://sundai.willsarg.com/api   # live rainbow at 30 fps (URL required: demo.py defaults to localhost)
+python3 demo.py your-instance https://sundai.willsarg.com/api   # live rainbow at 30 fps
 python3 clip_demo.py your-instance                              # 6 s bouncing bar, looped</code></pre>
+<p class="note">The URL argument to <code>demo.py</code> is required: without it the script targets a local dev
+server. <code>clip_demo.py</code> defaults to the hosted simulator.</p>

@@ -15,6 +15,9 @@ You get back an adjective-animal name, plus a `send_url` and a `view_url`. Open 
 `view_url` in a browser: `https://sundai.willsarg.com/your-instance`. Add `?view=river` or
 `?view=street` for the other camera angles.
 
+**Every example below writes `your-instance`. Replace it with the exact name you were given; do not make up your
+own.** The server only accepts names from its own pool, and rejects `your-instance` itself with a `400`.
+
 ## Quick start, step by step
 
 From nothing to your own pixels on the building in about five minutes.
@@ -42,8 +45,9 @@ From nothing to your own pixels on the building in about five minutes.
    ```
    The top-left window on the viewer turns red. Frames sit at `f[row][col]`, row 0 at the top. If nothing
    happens or you see a connection error, check that the name matches the viewer URL exactly. A `400 bad instance
-   name` means you left `your-instance` in.
-4. **Animate.** Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
+   name` means the name is not one the server handed out, for example you left `your-instance` in.
+4. **Animate.** Same thing in a loop: change the frame, send it, sleep a thirtieth of a second. Replace the last
+   three lines of `hello.py` with this and run it again:
    ```python
    i = 0
    while True:
@@ -124,7 +128,7 @@ from gbsim import Frame, upload_clip, clear_clip   # simulator-only helpers
 frames = [Frame() for _ in range(180)]             # 1..900 frames
 # ...draw into each frame...
 upload_clip("your-instance", frames, fps=30)         # fps 1..30
-clear_clip("your-instance")                          # remove it
+# clear_clip("your-instance")                        # run later to remove it
 ```
 
 The clip wraps straight from the last frame to the first, so make its length a whole number
@@ -148,14 +152,15 @@ Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` 
 | `POST` | `/api/i/<name>/clip` | JSON `{"fps": 1..30, "frames": [<frame>, ...]}` (1..900 frames) or binary `[0x43, fps, countLo, countHi]` + frames | `201 {ok, clip: {fps, frames}}`; `400` with `{error}` |
 | `DELETE` | `/api/i/<name>/clip` | | `204` |
 | `GET` | `/api/i/<name>/` | | `200 {created_at, last_frame_at, viewers, frames, used, clip}` |
-| `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <admin password>` (not the event password) | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password |
+| `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <admin password>` (the `ADMIN_PASSWORD` secret, not the event password) | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password; `503` if `ADMIN_PASSWORD` is not configured |
 | `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
 | `POST` | `/docs` | form field `password=<event password>` | the API docs page (this section as HTML), plus a 12 h cookie so `GET /docs` keeps working; wrong password bounces to `/?docs=denied` |
 | `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
 
 Notes:
 
-- Names are `adjective-animal`, lower-case ASCII. Anything else is a `400`.
+- Names are `adjective-animal` pairs drawn from the server's fixed word pools; use the exact name *Create* gave
+  you. Any other name, including `your-instance`, is a `400`.
 - A name is reserved when it is handed out or when it receives its first frame. The pool has
   1296 names; the admin `DELETE` above releases one.
 - Frames are applied on a 33 ms tick, so reading `/frame` immediately after posting one can
@@ -167,9 +172,12 @@ Notes:
 
 ```
 cd poc/python
-python3 demo.py <name> https://sundai.willsarg.com/api   # live rainbow at 30 fps (URL required: demo.py defaults to localhost)
+python3 demo.py <name> https://sundai.willsarg.com/api   # live rainbow at 30 fps
 python3 clip_demo.py <name>                              # 6 s bouncing bar, looped
 ```
+
+The URL argument to `demo.py` is required: without it the script targets a local dev server. `clip_demo.py`
+defaults to the hosted simulator.
 
 ## Load check
 
