@@ -91,6 +91,7 @@ Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` 
 | `GET` | `/api/i/<name>/` | | `200 {created_at, last_frame_at, viewers, frames, used, clip}` |
 | `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <event password>` | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password |
 | `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
+| `POST` | `/docs` | form field `password=<event password>` | the API docs page (this section as HTML), plus a 12 h cookie so `GET /docs` keeps working; wrong password bounces to `/?docs=denied` |
 | `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
 
 Notes:

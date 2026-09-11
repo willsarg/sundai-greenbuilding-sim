@@ -18,6 +18,14 @@
   <input id="name" placeholder="curious-cat">
   <button id="watch">Watch</button>
 </section>
+<section>
+  <h2>API docs</h2>
+  <form method="post" action="/docs">
+    <input name="password" type="password" placeholder="event password" autocomplete="off">
+    <button>Open docs</button>
+  </form>
+  <p id="docsout"></p>
+</section>
 <script>
   create.onclick = async () => {
     const r = await fetch("/api/instances", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw.value }) });
@@ -26,4 +34,5 @@
     location.href = j.view_url;
   };
   watch.onclick = () => { if (name.value) location.href = "/" + name.value.trim(); };
+  if (new URLSearchParams(location.search).get("docs") === "denied") docsout.textContent = "wrong password";
 </script>

@@ -15,6 +15,7 @@ export default defineConfig({
           input: {
             index: resolve(__dirname, "site/index.html"),
             view: resolve(__dirname, "site/view.html"),
+            docs: resolve(__dirname, "site/docs.html"),
           },
         },
       },
