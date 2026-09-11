@@ -25,8 +25,9 @@ From nothing to your own pixels on the building in about five minutes.
    cd sundai-greenbuilding-sim/poc/python
    pip install -r requirements.txt      # or: uv pip install -r requirements.txt
    ```
-2. **Get an instance.** On https://sundai.willsarg.com type the event password and press *Create*. You land
-   on your instance's viewer; the name in the URL (say `brave-otter`) is what your code will target.
+2. **Get an instance.** Open https://sundai.willsarg.com in another tab, type the event password and press
+   *Create*. You land on your instance's viewer. Note the name in the URL (say `brave-otter`): that is what your
+   code will target. Keep the viewer tab open.
 3. **Light one window.** Save this as `hello.py` in `poc/python` and run `python3 hello.py brave-otter`:
    ```python
    import sys, time
@@ -38,9 +39,19 @@ From nothing to your own pixels on the building in about five minutes.
    d.send(f)
    time.sleep(1)                        # give the frame time to arrive before exiting
    ```
-   The top-left window on the viewer turns red. Frames sit at `f[row][col]`, row 0 at the top.
-4. **Animate.** Loop, change the frame, call `send()` each pass, sleep for `1/30`. `python3 demo.py brave-otter`
-   is a complete example (a scrolling rainbow at 30 fps).
+   The top-left window on the viewer turns red. Frames sit at `f[row][col]`, row 0 at the top. If nothing
+   happens or you see a connection error, check that the name matches the viewer URL exactly.
+4. **Animate.** Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
+   ```python
+   i = 0
+   while True:
+       f = d.makeframe()
+       f[i % 17][i % 9] = Color(255, 0, 0)   # one red window walking down the building
+       d.send(f)
+       i += 1
+       time.sleep(1 / 30)
+   ```
+   For a fuller example, from `poc/python` run `python3 demo.py brave-otter` (a scrolling rainbow at 30 fps).
 5. **Share it.** Send anyone `https://sundai.willsarg.com/brave-otter`. Add `?view=street` or `?view=river`
    for other camera angles.
 6. **Optional: leave a loop running without your laptop.** Render frames up front and upload them once as a
@@ -54,7 +65,9 @@ From nothing to your own pixels on the building in about five minutes.
        frames.append(f)
    upload_clip("brave-otter", frames, fps=30)
    ```
-   `python3 clip_demo.py brave-otter` does the same with a bouncing bar.
+   From `poc/python`, `python3 clip_demo.py brave-otter` does the same with a bouncing bar.
+   **Keep this out of your game code.** `upload_clip`, `clear_clip` and `WebDisplay.flush()` / `close()` are
+   simulator-only; the real building only has `makeframe()` and `send(frame)`. Put clip uploads in a separate script.
 
 Two copies of your program aimed at one instance make the building flicker between them. Kill one.
 

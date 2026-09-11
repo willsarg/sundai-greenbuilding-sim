@@ -41,9 +41,9 @@ and anyone can watch it live in a browser.</p>
 <pre><code>git clone https://github.com/willsarg/sundai-greenbuilding-sim.git
 cd sundai-greenbuilding-sim/poc/python
 pip install -r requirements.txt      # or: uv pip install -r requirements.txt</code></pre></li>
-  <li><strong>Get an instance.</strong> On the <a href="/">landing page</a>, type the event password and press
-    <em>Create</em>. You land on your instance's viewer; the name in the URL (say <code>brave-otter</code>) is what
-    your code will target. Keep that tab open.</li>
+  <li><strong>Get an instance.</strong> Open the <a href="/" target="_blank">landing page</a> in another tab, type
+    the event password and press <em>Create</em>. You land on your instance's viewer. Note the name in the URL (say
+    <code>brave-otter</code>): that is what your code will target. Keep the viewer tab open and come back here.</li>
   <li><strong>Light one window.</strong> Save this as <code>hello.py</code> in <code>poc/python</code> and run
     <code>python3 hello.py brave-otter</code>:
 <pre><code>import sys, time
@@ -54,9 +54,18 @@ f = d.makeframe()                    # 17 rows x 9 columns, all off
 f[0][0] = Color(255, 0, 0)           # top-left window, red
 d.send(f)
 time.sleep(1)                        # give the frame time to arrive before exiting</code></pre>
-    The top-left window on the viewer turns red. Frames sit at <code>f[row][col]</code>, row 0 at the top.</li>
-  <li><strong>Animate.</strong> Loop, change the frame, call <code>send()</code> each pass, sleep for
-    <code>1/30</code>. That is the whole live mode. <code>python3 demo.py brave-otter</code> is a complete example
+    The top-left window on the viewer turns red. Frames sit at <code>f[row][col]</code>, row 0 at the top.
+    If nothing happens or you see a connection error, check that the name matches the viewer URL exactly.</li>
+  <li><strong>Animate.</strong> Same thing in a loop: change the frame, send it, sleep a thirtieth of a second.
+    That is the whole live mode.
+<pre><code>i = 0
+while True:
+    f = d.makeframe()
+    f[i % 17][i % 9] = Color(255, 0, 0)   # one red window walking down the building
+    d.send(f)
+    i += 1
+    time.sleep(1 / 30)</code></pre>
+    For a fuller example, from the <code>poc/python</code> folder run <code>python3 demo.py brave-otter</code>
     (a scrolling rainbow at 30 fps).</li>
   <li><strong>Share it.</strong> Send anyone <code>https://sundai.willsarg.com/brave-otter</code>. Add
     <code>?view=street</code> or <code>?view=river</code> for other camera angles.</li>
@@ -69,7 +78,12 @@ for i in range(90):                  # 3 s at 30 fps
     f[i % 17][i % 9] = Color(0, 255, 0)
     frames.append(f)
 upload_clip("brave-otter", frames, fps=30)</code></pre>
-    <code>python3 clip_demo.py brave-otter</code> does the same with a bouncing bar.</li>
+    From the <code>poc/python</code> folder, <code>python3 clip_demo.py brave-otter</code> does the same with a
+    bouncing bar.
+    <br><strong>Keep this out of your game code.</strong> <code>upload_clip</code>, <code>clear_clip</code> and
+    <code>WebDisplay.flush()</code> / <code>close()</code> are simulator-only. The real building only has
+    <code>makeframe()</code> and <code>send(frame)</code>; game code that sticks to those runs unchanged on it.
+    Put clip uploads in a separate script.</li>
 </ol>
 <p class="note">Two copies of your program aimed at one instance make the building flicker between them. Kill one.</p>
 
