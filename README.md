@@ -89,7 +89,7 @@ Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` 
 | `POST` | `/api/i/<name>/clip` | JSON `{"fps": 1..30, "frames": [<frame>, ...]}` (1..900 frames) or binary `[0x43, fps, countLo, countHi]` + frames | `201 {ok, clip: {fps, frames}}`; `400` with `{error}` |
 | `DELETE` | `/api/i/<name>/clip` | | `204` |
 | `GET` | `/api/i/<name>/` | | `200 {created_at, last_frame_at, viewers, frames, used, clip}` |
-| `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <event password>` | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password |
+| `DELETE` | `/api/i/<name>` | header `Authorization: Bearer <admin password>` (not the event password) | `200 {ok, name}`: wipes frame, clip and reservation, returns the name to the pool; `401` bad password |
 | `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
 | `POST` | `/docs` | form field `password=<event password>` | the API docs page (this section as HTML), plus a 12 h cookie so `GET /docs` keeps working; wrong password bounces to `/?docs=denied` |
 | `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
@@ -115,7 +115,7 @@ python3 python/clip_demo.py <name>                                     # 6 s bou
 ## Load check
 
 ```
-cd poc/python && EVENT_PASSWORD=<event password> python3 load_test.py 50 60
+cd poc/python && EVENT_PASSWORD=<event password> ADMIN_PASSWORD=<admin password> python3 load_test.py 50 60
 ```
 
 Creates 50 instances, streams 30 fps to each for 60 s, reports accepted fps, then wipes every
@@ -124,7 +124,7 @@ instance it created.
 ## Running it yourself
 
 ```
-cd poc && npm install && npm run dev        # http://localhost:8787, password from poc/.dev.vars
+cd poc && npm install && npm run dev        # http://localhost:8787, passwords from poc/.dev.vars
 npm run build && npx wrangler deploy --config dist/gbsim_poc/wrangler.json
 ```
 

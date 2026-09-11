@@ -68,12 +68,13 @@ export default {
       const sub = m[2] || "/";
       if (sub === "/claim" || sub === "/reset") return json({ error: "not found" }, 404);   // internal routes
       const stub = env.INSTANCE.get(env.INSTANCE.idFromName(name));
-      // Admin: DELETE /api/i/{name} with the event password wipes the instance (frame, clip,
-      // reservation) and returns its name to the pool. Viewers get a black frame and no clip.
+      // Admin: DELETE /api/i/{name} with the admin password (separate from the event password)
+      // wipes the instance (frame, clip, reservation) and returns its name to the pool.
+      // Viewers get a black frame and no clip.
       if (sub === "/" && req.method === "DELETE") {
         const auth = req.headers.get("authorization") || "";
-        if (!env.EVENT_PASSWORD) return json({ error: "server has no EVENT_PASSWORD configured" }, 503);
-        if (auth !== `Bearer ${env.EVENT_PASSWORD}`) return json({ error: "unauthorized" }, 401);
+        if (!env.ADMIN_PASSWORD) return json({ error: "server has no ADMIN_PASSWORD configured" }, 503);
+        if (auth !== `Bearer ${env.ADMIN_PASSWORD}`) return json({ error: "unauthorized" }, 401);
         return stub.fetch(new Request(`${url.origin}/api/i/${name}/reset`, { method: "POST" }));
       }
       return stub.fetch(req);
