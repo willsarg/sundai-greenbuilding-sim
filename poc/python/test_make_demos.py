@@ -17,7 +17,7 @@ class T(unittest.TestCase):
             make_demos.OUT = d
             make_demos.main()
             manifest = json.load(open(os.path.join(d, "demos.json")))
-            self.assertEqual([m["slug"] for m in manifest], [s for s, *_ in make_demos.DEMOS])
+            self.assertEqual([m["slug"] for m in manifest], [s for s, *_ in make_demos.all_demos()])
             for m in manifest:
                 data = open(os.path.join(d, f"{m['slug']}.bin"), "rb").read()
                 self.assertEqual(data[0], 0x43)

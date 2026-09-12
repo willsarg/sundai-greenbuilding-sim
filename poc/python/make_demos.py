@@ -142,10 +142,25 @@ DEMOS = [
 ]
 
 
+# Extra demos designed by other models (see the module docstrings); they import from this module,
+# so pull them in only after DEMOS exists.
+def _extra():
+    import demos_haiku, demos_sonnet, demos_opus
+    return demos_haiku.DEMOS + demos_sonnet.DEMOS + demos_opus.DEMOS
+
+
+def all_demos():
+    seen, out = set(), []
+    for d in DEMOS + _extra():
+        assert d[0] not in seen, f"duplicate slug {d[0]}"
+        seen.add(d[0]); out.append(d)
+    return out
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     manifest = []
-    for slug, title, desc, fn in DEMOS:
+    for slug, title, desc, fn in all_demos():
         frames, fps = fn()
         data = encode_clip(frames, fps)
         with open(os.path.join(OUT, f"{slug}.bin"), "wb") as fh:

@@ -33,5 +33,47 @@
     "description": "One row of colour bouncing between the top and bottom floors.",
     "fps": 30,
     "frames": 192
+  },
+  {
+    "slug": "sundai-glow",
+    "title": "Sundai glow",
+    "description": "Expanding rings of gradient light pulse outward from the sundae core, creating a shimmering halo effect.",
+    "fps": 30,
+    "frames": 60
+  },
+  {
+    "slug": "sundai-arch",
+    "title": "Sundai arch",
+    "description": "Four critters bounce across the building in arcing parabolic paths, crossing and passing each other.",
+    "fps": 30,
+    "frames": 80
+  },
+  {
+    "slug": "sundai-drips",
+    "title": "Sundai melt",
+    "description": "The sundae glass sits dim while bright gradient drips melt off its rim and tip and run down the tower.",
+    "fps": 15,
+    "frames": 36
+  },
+  {
+    "slug": "sundai-sprinkle-rain",
+    "title": "Sundai sprinkle rain",
+    "description": "Brand-coloured sprinkles rain down the whole facade like toppings falling onto the sundae.",
+    "fps": 12,
+    "frames": 40
+  },
+  {
+    "slug": "sundai-melt",
+    "title": "Melting sundae",
+    "description": "The sundae melts down the tower, drips pooling on the plaza, then re-freezes.",
+    "fps": 24,
+    "frames": 144
+  },
+  {
+    "slug": "sundai-cherry",
+    "title": "Cherry drop",
+    "description": "A cherry falls into the sundae and splashes brand-coloured ripples across the facade.",
+    "fps": 24,
+    "frames": 72
   }
 ]
