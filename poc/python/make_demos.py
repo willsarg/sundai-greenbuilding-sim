@@ -5,7 +5,7 @@ Add a demo: write a function returning (frames, fps), add it to DEMOS, rerun. Ke
 whole number of its animation's cycles so the loop is seamless.
 usage: python3 make_demos.py [out_dir]
 """
-import colorsys, json, os, sys
+import colorsys, json, math, os, sys
 from gbsim import Frame, Color, encode_clip
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "site", "public", "demos")
@@ -88,7 +88,7 @@ SUNDAE = [(r, c) for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(lin
 SUNDAE_KIND = {(r, c): ch for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(line) if ch != "."}
 SUNDAE_CUP = [rc for rc in SUNDAE if SUNDAE_KIND[rc] == "g"]
 SUNDAE_TOP = 0                     # the art already spans all 17 rows
-WHITE = Color(200, 200, 205)
+WHITE = Color(120, 120, 130)   # bloom in the viewer makes true white blinding
 
 
 def sundae_colour(r, c, shift=0.0):
@@ -152,7 +152,27 @@ def reveal():
     return frames, 12
 
 
+def float_():
+    """The sundae bobs up and down by the one spare floor, cross-fading between the two positions. 4 s cycle."""
+    n = 120
+    frames = []
+    for t in range(n):
+        f = Frame()
+        u = t / n
+        k = 0.5 - 0.5 * math.cos(2 * math.pi * u)     # 0 -> 1 -> 0, eased, seamless
+        for r, c in SUNDAE:
+            col = sundae_colour(r, c)
+            a = f[r][c]
+            f[r][c] = Color(a.r + col.r * (1 - k), a.g + col.g * (1 - k), a.b + col.b * (1 - k))
+            if r + 1 < 17:
+                b = f[r + 1][c]
+                f[r + 1][c] = Color(b.r + col.r * k, b.g + col.g * k, b.b + col.b * k)
+        frames.append(f)
+    return frames, 30
+
+
 DEMOS = [
+    ("sundai-float", "Sundai float", "The sundae bobs gently up and down the tower.", float_),
     ("sundai-sundae", "Sundai sundae", "The brand-book sundae on the building, its gradient drifting across the cup.", sundae),
     ("sundai-critters", "Sundai critters", "The logo's pixel critters drifting up the tower.", critters),
     ("sundai-reveal", "Sundai reveal", "The sundae builds window by window, holds, and fades.", reveal),
