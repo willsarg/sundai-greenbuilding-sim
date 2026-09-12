@@ -30,12 +30,16 @@ def melt():
 
     Sprite sits at rows 1..11 so rows 12..16 are drip + puddle space. 144-frame cycle at 24 fps.
     """
-    n, top = 144, 1
+    n, top = 144, 0
     # Two droplets per column, each doing a whole number of falls per cycle -> seamless.
     streams = []
     for c in range(COLS):
+        if c not in _CUP_BOTTOM:
+            continue                               # the art leaves the outer columns dark
         start = _CUP_BOTTOM[c] + top + 1           # first row below the cup in this column
         dist = ROWS - start                        # rows of travel down to the floor
+        if dist <= 0:
+            continue
         cycles = 2 if dist > 8 else 5              # long edge runs are slower than the short centre ones
         for k in range(2):
             streams.append((c, start, dist, cycles, k * 0.5 + 0.07 * c))

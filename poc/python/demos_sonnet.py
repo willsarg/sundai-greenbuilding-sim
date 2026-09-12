@@ -26,11 +26,11 @@ def melt():
 
     # (source col, source row, gradient t, phase offset)
     lanes = [
-        (1, SUNDAE_TOP + 0, 0.05, 0),    # left rim of the bowl
-        (7, SUNDAE_TOP + 0, 0.20, 12),   # right rim of the bowl
-        (3, SUNDAE_TOP + 4, 0.55, 6),    # left shoulder, narrowing stem
-        (5, SUNDAE_TOP + 4, 0.70, 18),   # right shoulder
-        (4, SUNDAE_TOP + 10, 0.95, 24),  # tip of the glass
+        (1, SUNDAE_TOP + 6, 0.05, 0),    # left end of the rim
+        (7, SUNDAE_TOP + 6, 0.20, 12),   # right end of the rim
+        (2, SUNDAE_TOP + 9, 0.55, 6),    # left shoulder, narrowing stem
+        (6, SUNDAE_TOP + 9, 0.70, 18),   # right shoulder
+        (4, SUNDAE_TOP + 12, 0.95, 24),  # tip of the glass
     ]
 
     frames = []

@@ -2,7 +2,7 @@
   {
     "slug": "sundai-sundae",
     "title": "Sundai sundae",
-    "description": "The Sundai logo's sundae with the brand gradient flowing through it.",
+    "description": "The brand-book sundae on the building, its gradient drifting across the cup.",
     "fps": 30,
     "frames": 90
   },
@@ -18,7 +18,7 @@
     "title": "Sundai reveal",
     "description": "The sundae builds window by window, holds, and fades.",
     "fps": 12,
-    "frames": 97
+    "frames": 83
   },
   {
     "slug": "rainbow",

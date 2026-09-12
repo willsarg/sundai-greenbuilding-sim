@@ -62,20 +62,42 @@ def sprite(rows):
     return [(r, c) for r, line in enumerate(rows) for c, ch in enumerate(line) if ch == "#"]
 
 
-SUNDAE = sprite([
-    "#########",
-    "#########",
-    ".#######.",
-    ".#######.",
-    "..#####..",
-    "..#####..",
-    "...###...",
-    "....#....",
-    "....#....",
-    "...###...",
-    "..#####..",
-])
-SUNDAE_TOP = 3                     # rows 3..13 of 17, cup centred on the tower
+# The sundae as drawn on the building in the Sundai brand book (17 floors, 7 of the 9 columns,
+# centred). 'w' = white sparkle/cherry cells, 'g' = cup cells (pink on the left fading to orange on
+# the right in the artwork). Row 0 is the top floor.
+SUNDAE_ART = [
+    "....w....",
+    "...www...",
+    "...w.w...",
+    "..w...w..",
+    ".....ww..",
+    ".w.....w.",
+    ".ggggggg.",
+    ".g.....g.",
+    "..ggggg..",
+    "..g...g..",
+    "...g.g...",
+    "...ggg...",
+    "....g....",
+    ".........",
+    "..g...g..",
+    "..ggggg..",
+    ".........",
+]
+SUNDAE = [(r, c) for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(line) if ch != "."]
+SUNDAE_KIND = {(r, c): ch for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(line) if ch != "."}
+SUNDAE_CUP = [rc for rc in SUNDAE if SUNDAE_KIND[rc] == "g"]
+SUNDAE_TOP = 0                     # the art already spans all 17 rows
+WHITE = Color(200, 200, 205)
+
+
+def sundae_colour(r, c, shift=0.0):
+    """Logo colouring: white sparkle; cup runs pink (left) to yellow-orange (right), optionally shifted."""
+    if SUNDAE_KIND.get((r, c)) == "w":
+        return WHITE
+    u = ((c - 1) / 6 + shift) % 1.0
+    return brand(0.45 + 0.55 * (1 - abs(2 * u - 1)))   # triangle wave: no seam as the drift wraps
+
 
 CRITTERS = [
     sprite(["####", "#..#", "####"]),
@@ -86,16 +108,13 @@ CRITTERS = [
 
 
 def sundae():
-    """The Sundai sundae with the brand gradient flowing up through it. 90-frame cycle."""
+    """The Sundai sundae as drawn in the brand book, its pink-to-orange gradient drifting across the cup. 90-frame cycle."""
     n = 90
     frames = []
     for t in range(n):
         f = Frame()
         for r, c in SUNDAE:
-            # gradient runs top-to-bottom over the cup and cycles; wrap keeps the loop seamless
-            u = ((r + SUNDAE_TOP) / 17 + t / n) % 1.0
-            u = 1 - abs(2 * u - 1)        # triangle wave so blue and yellow never hard-cut
-            f[r + SUNDAE_TOP][c] = brand(u)
+            f[r][c] = sundae_colour(r, c, shift=t / n)
         frames.append(f)
     return frames, 30
 
@@ -118,7 +137,7 @@ def critters():
 
 
 def reveal():
-    """Sundae builds up one window at a time in gradient colour, holds, dims out. 12 fps."""
+    """Sundae builds up one window at a time in logo colours, holds, dims out. 12 fps."""
     order = sorted(SUNDAE, key=lambda rc: (rc[0] * 7 + rc[1] * 13) % 17)   # scattered but deterministic
     build, hold, fade = len(order), 24, 18
     frames = []
@@ -127,14 +146,14 @@ def reveal():
         lit = order[: min(t + 1, build)]
         dim = 1.0 if t < build + hold else 1.0 - (t - build - hold + 1) / fade
         for r, c in lit:
-            col = brand((r + SUNDAE_TOP) / 17)
-            f[r + SUNDAE_TOP][c] = Color(col.r * dim, col.g * dim, col.b * dim)
+            col = sundae_colour(r, c)
+            f[r][c] = Color(col.r * dim, col.g * dim, col.b * dim)
         frames.append(f)
     return frames, 12
 
 
 DEMOS = [
-    ("sundai-sundae", "Sundai sundae", "The Sundai logo's sundae with the brand gradient flowing through it.", sundae),
+    ("sundai-sundae", "Sundai sundae", "The brand-book sundae on the building, its gradient drifting across the cup.", sundae),
     ("sundai-critters", "Sundai critters", "The logo's pixel critters drifting up the tower.", critters),
     ("sundai-reveal", "Sundai reveal", "The sundae builds window by window, holds, and fades.", reveal),
     ("rainbow", "Scrolling rainbow", "Every window lit, hue drifting down the tower at 30 fps.", rainbow),
