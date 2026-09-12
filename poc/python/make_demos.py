@@ -48,12 +48,21 @@ def bouncing_bar():
 BRAND = [(0x2C, 0xA8, 0xDE), (0xED, 0x75, 0xAF), (0xFF, 0xE6, 0x00)]   # blue -> pink -> yellow
 
 
-def brand(t):
-    """Brand gradient colour at t in [0,1]."""
+def brand(t, *, linear=False):
+    """Equal-spaced blue/pink/yellow sRGB stops; optionally lerp in linear light."""
     t = min(max(t, 0.0), 1.0) * (len(BRAND) - 1)
     i = min(int(t), len(BRAND) - 2)
     a, b = BRAND[i], BRAND[i + 1]
     k = t - i
+    if linear:
+        def decode(value):
+            value /= 255
+            return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+        def encode(value):
+            return round(255 * (12.92 * value if value <= 0.0031308 else 1.055 * value ** (1 / 2.4) - 0.055))
+
+        return Color(*(encode(decode(a[channel]) * (1 - k) + decode(b[channel]) * k) for channel in range(3)))
     return Color(*(a[j] + (b[j] - a[j]) * k for j in range(3)))
 
 
@@ -88,15 +97,20 @@ SUNDAE = [(r, c) for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(lin
 SUNDAE_KIND = {(r, c): ch for r, line in enumerate(SUNDAE_ART) for c, ch in enumerate(line) if ch != "."}
 SUNDAE_CUP = [rc for rc in SUNDAE if SUNDAE_KIND[rc] == "g"]
 SUNDAE_TOP = 0                     # the art already spans all 17 rows
-WHITE = Color(120, 120, 130)   # bloom in the viewer makes true white blinding
+WHITE = Color(200, 200, 200)
 
 
 def sundae_colour(r, c, shift=0.0):
-    """Logo colouring: white sparkle; cup runs pink (left) to yellow-orange (right), optionally shifted."""
+    """Neutral white with headroom for the Canvas core lift and GPU bloom.
+
+    At zero shift, columns 1..7 lerp pink to yellow in linear-light sRGB.
+    The cup spans half a triangle period; shifting a full period loops seamlessly.
+    Blue remains the first brand stop, outside the cup's pink/yellow segment.
+    """
     if SUNDAE_KIND.get((r, c)) == "w":
         return WHITE
-    u = ((c - 1) / 6 + shift) % 1.0
-    return brand(0.45 + 0.55 * (1 - abs(2 * u - 1)))   # triangle wave: no seam as the drift wraps
+    u = ((c - 1) / 12 + shift) % 1.0
+    return brand(0.5 + 0.5 * (1 - abs(2 * u - 1)), linear=True)
 
 
 CRITTERS = [
