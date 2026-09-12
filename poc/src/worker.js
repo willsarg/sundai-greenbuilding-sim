@@ -107,6 +107,15 @@ export default {
     if (validName(url.pathname.slice(1))) {
       return env.ASSETS.fetch(new Request(`${url.origin}/view.html`, req));
     }
+    // "/demo/{slug}" is the viewer playing a baked clip from /demos/{slug}.bin: no instance,
+    // no password, no socket. Slugs are checked against the baked manifest.
+    const demo = url.pathname.match(/^\/demo\/([a-z0-9-]+)$/);
+    if (demo) {
+      const m = await env.ASSETS.fetch(new Request(`${url.origin}/demos/demos.json`, { method: "GET" }));
+      const list = m.ok ? await m.json() : [];
+      if (!list.some((d) => d.slug === demo[1])) return json({ error: "no such demo" }, 404);
+      return env.ASSETS.fetch(new Request(`${url.origin}/view.html`, req));
+    }
     return env.ASSETS.fetch(req);
   },
 };

@@ -13,6 +13,11 @@
   <button id="create">Create</button>
   <p id="out"></p>
 </section>
+<section id="demos" hidden>
+  <h2>Demos</h2>
+  <p>Pre-built animations playing on the simulator. No instance or password needed; add <code>?view=street</code> or <code>?view=river</code> for other angles.</p>
+  <ul id="demolist"></ul>
+</section>
 <section>
   <h2>Watch an instance</h2>
   <input id="name" placeholder="curious-cat">
@@ -34,5 +39,14 @@
     location.href = j.view_url;
   };
   watch.onclick = () => { if (name.value) location.href = "/" + name.value.trim(); };
+  fetch("/demos/demos.json").then((r) => r.ok ? r.json() : []).then((list) => {
+    if (!list.length) return;
+    for (const d of list) {
+      const li = document.createElement("li"), a = document.createElement("a");
+      a.href = "/demo/" + d.slug; a.textContent = d.title; li.append(a, " — " + d.description);
+      demolist.append(li);
+    }
+    demos.hidden = false;
+  }).catch(() => {});
   if (new URLSearchParams(location.search).get("docs") === "denied") docsout.textContent = "wrong password";
 </script>

@@ -1,8 +1,11 @@
 import { ROWS, COLS } from "/render.js";
 import { createPresenter, createFallback, webglAvailable } from "/scene.js";
 const $ = (id) => document.getElementById(id);
-const name = location.pathname.slice(1);
+// "/demo/{slug}" plays a baked clip from /demos/{slug}.bin instead of an instance's socket.
+const demoSlug = (location.pathname.match(/^\/demo\/([a-z0-9-]+)$/) || [])[1] || null;
+const name = demoSlug ? demoSlug : location.pathname.slice(1);
 $("name").textContent = name;
+if (demoSlug) { $("toggle").hidden = true; $("conn").hidden = true; }
 const sendUrl = `${location.origin}/api/i/${name}/frame`;
 $("send").textContent = sendUrl;
 $("curl").textContent = `curl -X POST ${sendUrl} -H 'Content-Type: application/json' -d @frame.json`;
@@ -57,6 +60,7 @@ let clipIdx = 0, clipNext = 0, lastLive = -Infinity, wsOpen = false, wasLive = f
 function setStatus() {
   const s = $("status");
   const liveNow = performance.now() - lastLive < LIVE_GRACE_MS;
+  if (demoSlug) { s.textContent = clip ? `demo · ${clip.n} frames @ ${clip.fps} fps, looping` : "demo · loading…"; return; }
   if (!wsOpen) return;
   if (clip && liveNow) s.textContent = "live (clip paused)";
   else if (clip) s.textContent = `clip · ${clip.n} frames @ ${clip.fps} fps, looping`;
@@ -100,6 +104,14 @@ function paint(now) {
 }
 requestAnimationFrame(paint);
 
+async function loadDemo() {
+  try {
+    const r = await fetch(`/demos/${demoSlug}.bin`);
+    if (!r.ok) throw new Error(`${r.status}`);
+    onMessage(await r.arrayBuffer());
+  } catch (e) { $("status").textContent = `demo failed to load (${e.message})`; }
+}
+
 function connect() {
   const ws = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/i/${name}/view`);
   ws.binaryType = "arraybuffer";
@@ -107,5 +119,5 @@ function connect() {
   ws.onmessage = (e) => onMessage(e.data);
   ws.onclose = () => { wsOpen = false; $("status").textContent = "reconnecting…"; setTimeout(connect, 1000); };
 }
-connect();
+if (demoSlug) loadDemo(); else connect();
 

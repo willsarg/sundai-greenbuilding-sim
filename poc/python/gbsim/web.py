@@ -176,6 +176,11 @@ def upload_clip(name, frames, fps=30, base_url=DEFAULT_BASE_URL, timeout=10.0):
     frames: list of Frame (1..900); fps: 1..30. Returns True on success. Live send() frames
     take over while they arrive; the clip resumes ~2 s after the last one.
     """
+    return _blocking("POST", name, encode_clip(frames, fps), base_url, timeout)
+
+
+def encode_clip(frames, fps=30):
+    """Encode frames as the simulator's binary clip: [0x43, fps, countLo, countHi] + 459 B/frame."""
     if not 1 <= fps <= 30:
         raise ValueError("fps must be 1..30")
     if not 1 <= len(frames) <= 900:
@@ -183,7 +188,7 @@ def upload_clip(name, frames, fps=30, base_url=DEFAULT_BASE_URL, timeout=10.0):
     buf = bytearray((0x43, int(fps), len(frames) & 0xFF, len(frames) >> 8))
     for frame in frames:
         buf += _pack(frame)
-    return _blocking("POST", name, bytes(buf), base_url, timeout)
+    return bytes(buf)
 
 
 def clear_clip(name, base_url=DEFAULT_BASE_URL, timeout=10.0):

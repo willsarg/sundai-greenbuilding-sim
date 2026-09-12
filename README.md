@@ -156,6 +156,7 @@ Send a real `User-Agent` header: Cloudflare rejects the default `Python-urllib` 
 | `WS` | `/api/i/<name>/view` | | binary stream: 459-byte messages are live frames; anything else is a clip snapshot (same header as above, count 0 = no clip) |
 | `POST` | `/docs` | form field `password=<event password>` | the API docs page (this section as HTML), plus a 12 h cookie so `GET /docs` keeps working; wrong password bounces to `/?docs=denied` |
 | `GET` | `/<name>` | | the viewer page; `?view=close\|street\|river`, `&real=1`, `&fit=1`, `&fx=0` |
+| `GET` | `/demo/<slug>` | | the viewer playing a baked demo clip; no instance, password or socket. Same `?view=` toggles. Slugs listed in `/demos/demos.json`; unknown slug is `404` |
 
 Notes:
 
@@ -178,6 +179,14 @@ python3 clip_demo.py <name>                              # 6 s bouncing bar, loo
 
 The URL argument to `demo.py` is required: without it the script targets a local dev server. `clip_demo.py`
 defaults to the hosted simulator.
+
+## Demo pages
+
+`https://sundai.willsarg.com/demo/sundai-sundae`, `/demo/sundai-critters`, `/demo/sundai-reveal` (the Sundai logo in its brand gradient), `/demo/rainbow` and `/demo/bouncing-bar` play pre-built clips straight from static
+files, so they need no instance, no password and no server state: use them for QR codes, slides and the landing
+page. The clips are baked by `poc/python/make_demos.py` into `poc/site/public/demos/` (one `.bin` in the clip
+format above plus `demos.json`). To add one, write a function returning `(frames, fps)`, add it to `DEMOS`, run
+`python3 make_demos.py`, then rebuild and deploy. `python3 test_make_demos.py` checks the baked files.
 
 ## Load check
 

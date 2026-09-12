@@ -1,0 +1,37 @@
+[
+  {
+    "slug": "sundai-sundae",
+    "title": "Sundai sundae",
+    "description": "The Sundai logo's sundae with the brand gradient flowing through it.",
+    "fps": 30,
+    "frames": 90
+  },
+  {
+    "slug": "sundai-critters",
+    "title": "Sundai critters",
+    "description": "The logo's pixel critters drifting up the tower.",
+    "fps": 4,
+    "frames": 34
+  },
+  {
+    "slug": "sundai-reveal",
+    "title": "Sundai reveal",
+    "description": "The sundae builds window by window, holds, and fades.",
+    "fps": 12,
+    "frames": 97
+  },
+  {
+    "slug": "rainbow",
+    "title": "Scrolling rainbow",
+    "description": "Every window lit, hue drifting down the tower at 30 fps.",
+    "fps": 30,
+    "frames": 60
+  },
+  {
+    "slug": "bouncing-bar",
+    "title": "Bouncing bar",
+    "description": "One row of colour bouncing between the top and bottom floors.",
+    "fps": 30,
+    "frames": 192
+  }
+]
