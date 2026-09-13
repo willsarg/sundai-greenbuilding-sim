@@ -33,6 +33,8 @@ function cookieValue(req, name) {
   const m = (req.headers.get("cookie") || "").match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return m ? m[1] : null;
 }
+// Paths that people and coding agents guess when looking for an API description or the client.
+const PROBE = /^\/(openapi\.json|api-docs|swagger(\.json)?|schema|create|pip\/.*|gbsim(\.py)?|requirements\.txt|README(\.md)?|assets\/gbsim\.py|\.well-known\/.*)$/i;
 const redirect = (url, to) => Response.redirect(`${url.origin}${to}`, 303);
 
 export default {
@@ -120,11 +122,15 @@ export default {
     }
     // Unknown API paths and the usual doc-discovery guesses get a JSON 404 that points at the docs,
     // so a person or an agent probing the API learns where the reference is.
-    if (url.pathname.startsWith("/api") || /^\/(openapi\.json|api-docs|swagger(\.json)?|\.well-known\/.*)$/.test(url.pathname)) {
+    // "/i/{name}" is a common misreading of the viewer URL; send it to the viewer.
+    const iName = url.pathname.match(/^\/i\/([^/]+)\/?$/);
+    if (iName && validName(iName[1])) return redirect(url, `/${iName[1]}`);
+    if (url.pathname.startsWith("/api") || PROBE.test(url.pathname)) {
       return json({
         error: "not found",
         hint: "The API reference is the docs page: open https://sundai.willsarg.com, enter the event password and press Open docs (POST /docs). The README at https://github.com/willsarg/sundai-greenbuilding-sim has the same table.",
         endpoints: ["POST /api/instances", "POST|GET /api/i/{name}/frame", "POST|DELETE /api/i/{name}/clip", "GET /api/i/{name}/", "WS /api/i/{name}/view"],
+        client: "Python client: git clone https://github.com/willsarg/sundai-greenbuilding-sim && cd poc/python (package gbsim; not on PyPI, not served from this host)",
       }, 404);
     }
     return env.ASSETS.fetch(req);
