@@ -1,7 +1,7 @@
 """Designed by Claude Sonnet (2026-09-11). Two new Sundai-branded demos, built to the same conventions as make_demos.py.
 
 Run with:
-    PYTHONPATH=/Users/will/Documents/Github/willsarg/sundai-greenbuilding-sim/poc/python python3 sonnet.py
+    PYTHONPATH=poc/python python3 demos_sonnet.py
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
