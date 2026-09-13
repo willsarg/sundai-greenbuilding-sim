@@ -83,6 +83,7 @@ export default {
       return stub.fetch(req);
     }
 
+    if (url.pathname === "/docs/") return redirect(url, "/docs");
     if (url.pathname === "/docs") {
       if (!env.EVENT_PASSWORD) return json({ error: "server has no EVENT_PASSWORD configured" }, 503);
       const token = await docsToken(env.EVENT_PASSWORD);
@@ -109,12 +110,22 @@ export default {
     }
     // "/demo/{slug}" is the viewer playing a baked clip from /demos/{slug}.bin: no instance,
     // no password, no socket. Slugs are checked against the baked manifest.
+    if (url.pathname === "/demo" || url.pathname === "/demo/") return redirect(url, "/#demos");
     const demo = url.pathname.match(/^\/demo\/([a-z0-9-]+)$/);
     if (demo) {
       const m = await env.ASSETS.fetch(new Request(`${url.origin}/demos/demos.json`, { method: "GET" }));
       const list = m.ok ? await m.json() : [];
       if (!list.some((d) => d.slug === demo[1])) return json({ error: "no such demo" }, 404);
       return env.ASSETS.fetch(new Request(`${url.origin}/view.html`, req));
+    }
+    // Unknown API paths and the usual doc-discovery guesses get a JSON 404 that points at the docs,
+    // so a person or an agent probing the API learns where the reference is.
+    if (url.pathname.startsWith("/api") || /^\/(openapi\.json|api-docs|swagger(\.json)?|\.well-known\/.*)$/.test(url.pathname)) {
+      return json({
+        error: "not found",
+        hint: "The API reference is the docs page: open https://sundai.willsarg.com, enter the event password and press Open docs (POST /docs). The README at https://github.com/willsarg/sundai-greenbuilding-sim has the same table.",
+        endpoints: ["POST /api/instances", "POST|GET /api/i/{name}/frame", "POST|DELETE /api/i/{name}/clip", "GET /api/i/{name}/", "WS /api/i/{name}/view"],
+      }, 404);
     }
     return env.ASSETS.fetch(req);
   },
